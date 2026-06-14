@@ -1,0 +1,6 @@
+{
+  "name": "膝关节智能居家物理治疗系统",
+  "description": "基于行为改变轮(BCW)理论与欧氏距离智能算法的居家智能膝关节拉伸热敷理疗设备配套多端协同管理系统原型。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

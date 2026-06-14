@@ -1,0 +1,99 @@
+{
+  "setting": {
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "uglifyFileName": false,
+    "enhance": true,
+    "packNpmRelationList": [],
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "useCompilerPlugins": false,
+    "minifyWXML": true
+  },
+  "compileType": "miniprogram",
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "node_modules"
+      },
+      {
+        "type": "folder",
+        "value": "dist"
+      },
+      {
+        "type": "folder",
+        "value": "server"
+      },
+      {
+        "type": "folder",
+        "value": "src"
+      },
+      {
+        "type": "folder",
+        "value": "scripts"
+      },
+      {
+        "type": "folder",
+        "value": ".tmp-pillow"
+      },
+      {
+        "type": "folder",
+        "value": ".tmp-pillow-lib"
+      },
+      {
+        "type": "folder",
+        "value": ".git"
+      },
+      {
+        "type": "suffix",
+        "value": ".ts"
+      },
+      {
+        "type": "suffix",
+        "value": ".tsx"
+      },
+      {
+        "type": "suffix",
+        "value": ".command"
+      },
+      {
+        "type": "suffix",
+        "value": ".sh"
+      },
+      {
+        "type": "file",
+        "value": "Dockerfile"
+      },
+      {
+        "type": "file",
+        "value": "docker-compose.yml"
+      },
+      {
+        "type": "file",
+        "value": "package.json"
+      },
+      {
+        "type": "file",
+        "value": "package-lock.json"
+      },
+      {
+        "type": "file",
+        "value": "vite.config.ts"
+      },
+      {
+        "type": "file",
+        "value": "index.html"
+      }
+    ],
+    "include": []
+  },
+  "appid": "wx8a75d29c6913d746",
+  "miniprogramRoot": "./",
+  "editorSetting": {}
+}

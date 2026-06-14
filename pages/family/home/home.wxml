@@ -1,0 +1,106 @@
+<!-- 绑定向导 -->
+<view wx:if="{{!isLinked}}" class="bind-mask">
+  <view class="bind-panel">
+    <text class="bind-logo">💗</text>
+    <text class="bind-title">开启家属随远端看护通道</text>
+    <text class="bind-sub">KneeJoy 亲情关联与看护建立中</text>
+
+    <view class="bind-tabs">
+      <view class="bind-tab {{bindMethod === 'phone' ? 'bind-tab--active' : ''}}" data-method="phone" bindtap="onBindMethod">手机号码快捷关联</view>
+      <view class="bind-tab {{bindMethod === 'qr' ? 'bind-tab--active' : ''}}" data-method="qr" bindtap="onBindMethod">扫码配对绑定</view>
+    </view>
+
+    <view wx:if="{{bindMethod === 'phone'}}" class="bind-form">
+      <text class="bind-form-title">输入绑定人的预留手机号</text>
+      <input class="bind-input" value="{{bindPhone}}" bindinput="onBindPhoneInput" placeholder="请输入患者登录用的手机号" />
+      <text class="bind-hint">绑定人正在使用 KneeJoy 患者端，请输入其注册的手机帐号以进行配对连接。</text>
+      <button class="btn-pink" bindtap="onBindByPhone">一键云配对建立连接 →</button>
+    </view>
+
+    <view wx:else class="bind-form bind-form--qr">
+      <text class="bind-form-title bind-form-title--green">扫码极速物理识别</text>
+      <view class="qr-frame">
+        <text wx:if="{{isScanning}}" class="qr-scanning">📷 扫描中…</text>
+        <text wx:else class="qr-icon">📷</text>
+      </view>
+      <text class="bind-hint">模拟扫描患者 App 设置页的亲友绑定 QR 条码进行绑定。</text>
+      <button class="btn-pink" bindtap="onBindByQr">启动模拟扫码绑定</button>
+    </view>
+  </view>
+</view>
+
+  <!-- 主界面 -->
+<view wx:else class="page-with-tabbar">
+  <view wx:if="{{hardwareAlert}}" class="alarm-banner" bindtap="onClearAlarm">
+    <text>🚨 {{hardwareAlert}}</text>
+    <text class="alarm-close">✕</text>
+  </view>
+
+  <view class="nav-bar">
+    <text class="nav-badge nav-badge--family">家属端</text>
+    <text class="nav-title">{{navTitle}}</text>
+    <text class="nav-status nav-status--pink">● LINKED</text>
+  </view>
+
+  <!-- 守护中心 -->
+  <block wx:if="{{activeTab === 'guardian'}}">
+    <view class="card stats-card">
+      <text class="stats-title">守护对象：{{patientName}}</text>
+      <view class="stats-grid">
+        <view class="stat-item"><text class="stat-val">{{weeklyRate}}%</text><text class="stat-label">本周完成率</text></view>
+        <view class="stat-item"><text class="stat-val">{{streakDays}}</text><text class="stat-label">累计打卡天</text></view>
+        <view class="stat-item"><text class="stat-val">{{deviceStatus}}</text><text class="stat-label">设备状态</text></view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-title-row" style="margin-bottom: 16rpx;">
+        <text class="section-icon">📣</text>
+        <text class="section-title">一键远程关怀催促</text>
+      </view>
+      <textarea class="nudge-input" value="{{nudgeMsg}}" bindinput="onNudgeInput" maxlength="200" />
+      <view class="template-row">
+        <text class="template-chip" data-msg="爸妈，今天记得做20分钟智能拉伸牵引哈！" bindtap="onTemplate">提醒理疗</text>
+        <text class="template-chip" data-msg="天气转凉，注意膝盖保暖哦！" bindtap="onTemplate">保暖提醒</text>
+      </view>
+      <button class="btn-pink" bindtap="onSendNudge">💌 发送关怀消息至患者端</button>
+      <text wx:if="{{nudgeSent}}" class="sent-tip">✅ 消息已安全送达患者手机</text>
+    </view>
+  </block>
+
+  <!-- 科普大讲堂 -->
+  <block wx:if="{{activeTab === 'library'}}">
+    <view class="card article-card" wx:for="{{articles}}" wx:key="title">
+      <text class="article-title">{{item.title}}</text>
+      <text class="article-desc">{{item.desc}}</text>
+      <text class="article-tag">{{item.tag}}</text>
+    </view>
+  </block>
+
+  <!-- 设置 -->
+  <block wx:if="{{activeTab === 'settings'}}">
+    <view class="card">
+      <text class="section-title">已绑定设备</text>
+      <view wx:for="{{devices}}" wx:key="patient_id" class="device-item">
+        <text class="device-name">{{item.patient_name}}</text>
+        <text class="device-status">{{item.connection_label}}</text>
+      </view>
+      <view wx:if="{{devices.length === 0}}" class="empty-bindings">
+        <text class="empty-title">暂无绑定设备</text>
+      </view>
+    </view>
+    <button class="logout-btn" bindtap="onLogout">↩ 安全退出</button>
+  </block>
+</view>
+
+<view wx:if="{{isLinked}}" class="mini-tabbar">
+  <view class="mini-tab mini-tab--pink {{activeTab === 'guardian' ? 'mini-tab--active' : ''}}" data-tab="guardian" bindtap="onTabChange">
+    <text class="mini-tab-icon">💗</text><text>随护关怀</text>
+  </view>
+  <view class="mini-tab mini-tab--pink {{activeTab === 'library' ? 'mini-tab--active' : ''}}" data-tab="library" bindtap="onTabChange">
+    <text class="mini-tab-icon">📖</text><text>科普大讲堂</text>
+  </view>
+  <view class="mini-tab mini-tab--pink {{activeTab === 'settings' ? 'mini-tab--active' : ''}}" data-tab="settings" bindtap="onTabChange">
+    <text class="mini-tab-icon">⚙️</text><text>远程管理</text>
+  </view>
+</view>

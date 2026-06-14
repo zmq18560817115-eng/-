@@ -1,0 +1,221 @@
+.calendar-box,
+.chart-box {
+  background: var(--kj-bg-muted);
+  border: 1rpx solid var(--kj-border);
+  border-radius: var(--kj-radius-md);
+  padding: 24rpx;
+  margin-top: 8rpx;
+}
+
+.calendar-month {
+  display: block;
+  text-align: center;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--kj-text-secondary);
+  margin-bottom: 20rpx;
+}
+
+.week-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.week-cell {
+  text-align: center;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: var(--kj-text-caption);
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10rpx;
+}
+
+.day-cell-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.day-cell {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: var(--kj-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--kj-text-muted);
+  background: var(--kj-bg-card);
+  border: 1rpx solid var(--kj-border);
+  position: relative;
+}
+
+.day-cell--empty {
+  background: transparent;
+  border: none;
+}
+
+.day-cell--checked {
+  background: var(--kj-success);
+  color: #fff;
+  border-color: var(--kj-success);
+}
+
+.day-cell--today {
+  border: 2rpx solid var(--kj-primary);
+  color: var(--kj-primary-text);
+  background: var(--kj-bg-indigo);
+}
+
+.day-dot {
+  position: absolute;
+  bottom: 6rpx;
+  right: 6rpx;
+  width: 8rpx;
+  height: 8rpx;
+  background: #fff;
+  border-radius: var(--kj-radius-full);
+}
+
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12rpx;
+}
+
+.badge-item {
+  padding: 20rpx 10rpx;
+  border-radius: var(--kj-radius-md);
+  text-align: center;
+  border: 1rpx solid var(--kj-border);
+  min-height: 160rpx;
+  box-sizing: border-box;
+}
+
+.badge-item--on {
+  background: linear-gradient(180deg, #fffbeb, #ffedd5);
+  border-color: rgba(251, 146, 60, 0.3);
+  color: #92400e;
+}
+
+.badge-item--off {
+  background: var(--kj-bg-muted);
+  color: var(--kj-text-caption);
+  opacity: 0.7;
+}
+
+.badge-emoji {
+  display: block;
+  font-size: 40rpx;
+  margin-bottom: 10rpx;
+}
+
+.badge-name {
+  display: block;
+  font-size: 22rpx;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.badge-benefit {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.legend-item {
+  font-size: 22rpx;
+  color: var(--kj-text-muted);
+  font-weight: 500;
+}
+
+.dot {
+  display: inline-block;
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: var(--kj-radius-full);
+  margin-right: 8rpx;
+}
+
+.dot--indigo { background: var(--kj-primary); }
+.dot--rose { background: #f43f5e; }
+
+.chart-svg-wrap {
+  height: 180rpx;
+  background: var(--kj-bg-card);
+  border-radius: var(--kj-radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.chart-lines {
+  position: relative;
+  width: 100%;
+  height: 180rpx;
+}
+
+.grid-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 20%;
+  height: 1rpx;
+  background: repeating-linear-gradient(90deg, var(--kj-border) 0, var(--kj-border) 8rpx, transparent 8rpx, transparent 16rpx);
+}
+
+.grid-line--mid { top: 50%; }
+.grid-line--low { top: 80%; }
+
+.line {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 4rpx;
+  border-radius: var(--kj-radius-full);
+}
+
+.line--indigo {
+  top: 58%;
+  background: linear-gradient(90deg, var(--kj-primary), var(--kj-primary-text));
+  transform: rotate(-6deg);
+  transform-origin: left center;
+}
+
+.line--rose {
+  top: 32%;
+  background: linear-gradient(90deg, #fb7185, #e11d48);
+  transform: rotate(6deg);
+  transform-origin: left center;
+}
+
+.chart-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16rpx;
+  font-size: 20rpx;
+  color: var(--kj-text-caption);
+}
+
+.chart-note {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: var(--kj-text-caption);
+  text-align: center;
+  line-height: 1.6;
+}

@@ -1,0 +1,84 @@
+<view class="page page--tab">
+  <!-- 打卡日历 -->
+  <view class="card calendar-card">
+    <view class="section-head">
+      <view class="section-title-row">
+        <text class="section-icon">📅</text>
+        <text class="section-title">本月健康打卡日历</text>
+      </view>
+      <text class="pill-tag pill-tag--emerald">连续打卡：{{streakDays}} 天</text>
+    </view>
+
+    <view class="calendar-box">
+      <text class="calendar-month">2026年 5月 (膝关节康复周期)</text>
+      <view class="week-row">
+        <text wx:for="{{weekLabels}}" wx:key="*this" class="week-cell">{{item}}</text>
+      </view>
+      <view class="days-grid">
+        <view wx:for="{{calendarDays}}" wx:key="key" class="day-cell-wrap">
+          <view
+            wx:if="{{item.empty}}"
+            class="day-cell day-cell--empty"
+          ></view>
+          <view
+            wx:else
+            class="day-cell {{item.checked ? 'day-cell--checked' : ''}} {{item.today ? 'day-cell--today' : ''}}"
+            data-date="{{item.dateStr}}"
+            bindtap="onDayTap"
+          >
+            <text>{{item.dayNum}}</text>
+            <view wx:if="{{item.checked}}" class="day-dot"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 荣誉勋章 -->
+  <view class="card badge-card">
+    <view class="section-title-row" style="margin-bottom: 16rpx;">
+      <text class="section-icon">🏅</text>
+      <text class="section-title">已解锁荣誉勋章</text>
+    </view>
+    <view class="badge-grid">
+      <view
+        wx:for="{{badges}}"
+        wx:key="name"
+        class="badge-item {{item.unlocked ? 'badge-item--on' : 'badge-item--off'}}"
+      >
+        <text class="badge-emoji">{{item.unlocked ? item.emoji : '🔒'}}</text>
+        <text class="badge-name">{{item.name}}</text>
+        <text class="badge-benefit">{{item.unlocked ? item.benefit : '未解锁'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 趋势看板 -->
+  <view wx:if="{{showChart}}" class="card chart-card">
+    <view class="section-title-row" style="margin-bottom: 16rpx;">
+      <text class="section-icon">📈</text>
+      <text class="section-title">膝痛与应力趋势 (数据看板)</text>
+    </view>
+    <view class="chart-box">
+      <view class="chart-legend">
+        <text class="legend-item"><text class="dot dot--indigo"></text>治疗拉应力(N)</text>
+        <text class="legend-item"><text class="dot dot--rose"></text>膝部VAS疼痛分</text>
+      </view>
+      <view class="chart-svg-wrap">
+        <view class="chart-lines">
+          <view class="grid-line"></view>
+          <view class="grid-line grid-line--mid"></view>
+          <view class="grid-line grid-line--low"></view>
+          <view class="line line--indigo"></view>
+          <view class="line line--rose"></view>
+        </view>
+      </view>
+      <view class="chart-axis">
+        <text>第1次理疗 (初)</text>
+        <text>第5次理疗 (析)</text>
+        <text>今日 (效)</text>
+      </view>
+      <text class="chart-note">科研依据：持续的热敏拉伸配合可有效舒展关节滑膜，阻断VAS感觉通路的痛信号传送。</text>
+    </view>
+  </view>
+</view>

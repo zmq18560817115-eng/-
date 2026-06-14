@@ -1,0 +1,122 @@
+<view class="page-with-tabbar">
+  <view class="nav-bar">
+    <text class="nav-badge nav-badge--doctor">医学专家端</text>
+    <text class="nav-title">{{navTitle}}</text>
+    <text class="nav-status">● SECURE</text>
+  </view>
+
+  <!-- 工作台 -->
+  <block wx:if="{{activeTab === 'workbench'}}">
+    <view wx:if="{{!isVerified}}" class="verify-banner" bindtap="onOpenVerify">
+      <text>⚠️ 资质审核中 · 点击完成执业医师认证以解锁处方下发</text>
+    </view>
+
+    <view class="card">
+      <view class="section-title-row">
+        <text class="section-icon">👥</text>
+        <text class="section-title">签约患者全景看板</text>
+        <text class="patient-count">共 {{patients.length}} 人</text>
+      </view>
+      <scroll-view scroll-x class="patient-scroll">
+        <view
+          wx:for="{{patients}}"
+          wx:key="id"
+          class="patient-chip {{selectedPatientId === item.id ? 'patient-chip--active' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="onSelectPatient"
+        >
+          <text class="patient-name">{{item.name}}</text>
+          <text class="patient-meta">{{item.age}}岁 · 疼痛{{item.pain}}分</text>
+          <text class="patient-tag {{item.today_done ? 'patient-tag--done' : ''}}">{{item.today_done ? '今日已完成' : '待理疗'}}</text>
+        </view>
+      </scroll-view>
+
+      <view class="patient-detail">
+        <view class="detail-head">
+          <text class="detail-name">选中病患：{{activePatient.name}}（{{activePatient.age}}岁）</text>
+          <text class="detail-phone">{{activePatient.phone}}</text>
+        </view>
+        <view class="detail-grid">
+          <text>软骨磨损: <text class="detail-val">{{activePatient.wear}}级</text></text>
+          <text>关节积液: <text class="detail-val">{{activePatient.fluid}}级</text></text>
+          <text>疼痛(VAS): <text class="detail-val">{{activePatient.pain}}分</text></text>
+        </view>
+        <view class="detail-foot">
+          <text>依从率 {{activePatient.attendance}}%</text>
+          <text class="{{activePatient.today_done ? 'tag-done' : 'tag-pending'}}">{{activePatient.today_done ? '今日已康复' : '今日未理疗'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="section-title-row" style="margin-bottom: 16rpx;">
+        <text class="section-icon">📋</text>
+        <text class="section-title">远程处方下发 · {{activePatient.name}}</text>
+      </view>
+      <view class="rx-grid">
+        <view class="rx-item"><text>左拉力</text><text class="rx-val">{{rxLeft}}N</text></view>
+        <view class="rx-item"><text>右拉力</text><text class="rx-val">{{rxRight}}N</text></view>
+        <view class="rx-item"><text>热敷</text><text class="rx-val">{{rxTemp}}℃</text></view>
+        <view class="rx-item"><text>时长</text><text class="rx-val">{{rxDuration}}分</text></view>
+      </view>
+      <view class="slider-item"><text>左拉力 {{rxLeft}}N</text><slider min="10" max="40" value="{{rxLeft}}" bindchange="onRxLeft" /></view>
+      <view class="slider-item"><text>右拉力 {{rxRight}}N</text><slider min="10" max="40" value="{{rxRight}}" bindchange="onRxRight" /></view>
+      <view class="slider-item"><text>热敷 {{rxTemp}}℃</text><slider min="35" max="50" value="{{rxTemp}}" bindchange="onRxTemp" /></view>
+      <view class="slider-item"><text>时长 {{rxDuration}}分</text><slider min="5" max="45" value="{{rxDuration}}" bindchange="onRxDuration" /></view>
+      <button class="btn-indigo" bindtap="onSendPrescription">📤 下发临床处方至患者端</button>
+      <button class="btn-outline auth-code-btn" bindtap="onGenerateAuthCode">🔑 生成 6 位患者授权码</button>
+      <text wx:if="{{lastAuthCode}}" class="auth-code-tip">最新授权码：{{lastAuthCode}}（请告知患者于冷启动页导入）</text>
+    </view>
+  </block>
+
+  <!-- 学术研发 -->
+  <block wx:if="{{activeTab === 'research'}}">
+    <view class="card">
+      <view class="section-title-row" style="margin-bottom: 16rpx;">
+        <text class="section-icon">📚</text>
+        <text class="section-title">临床病例经验喂养</text>
+      </view>
+      <input class="field-input" placeholder="病例名称" value="{{caseName}}" bindinput="onCaseNameInput" />
+      <view class="field-row">
+        <text>年龄</text>
+        <input class="field-small" type="number" value="{{caseAge}}" bindinput="onCaseAgeInput" />
+      </view>
+      <button class="btn-indigo" bindtap="onSubmitCase">写入教学病例库</button>
+    </view>
+    <view class="card">
+      <text class="section-title">已收录病例 ({{clinicalCount}})</text>
+      <view wx:for="{{clinicalCases}}" wx:key="case_id" class="case-item">
+        <text class="case-name">{{item.case_name}}</text>
+        <text class="case-meta">磨损{{item.symptoms.cartilage_wear}}级 · 疼痛{{item.symptoms.pain_score}}分</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 资质审定 -->
+  <block wx:if="{{activeTab === 'license'}}">
+    <view class="card">
+      <view class="section-title-row" style="margin-bottom: 16rpx;">
+        <text class="section-icon">🪪</text>
+        <text class="section-title">数字医生资质审定</text>
+      </view>
+      <text class="verify-status {{isVerified ? 'verify-status--ok' : ''}}">{{isVerified ? '✅ 已认证 · 处方权限已解锁' : '⏳ 待完成双证认证'}}</text>
+      <view class="field-row"><text>科室</text><input class="field-input-inline" value="{{verifyDept}}" bindinput="onDeptInput" /></view>
+      <view class="field-row"><text>执照号</text><input class="field-input-inline" value="{{verifyLicense}}" bindinput="onLicenseInput" /></view>
+      <button class="btn-indigo" bindtap="onSubmitVerify">提交资质认证</button>
+    </view>
+  </block>
+
+  <button class="logout-btn" bindtap="onLogout">↩ 安全退出</button>
+</view>
+
+<view class="mini-tabbar">
+  <view class="mini-tab {{activeTab === 'workbench' ? 'mini-tab--active' : ''}}" data-tab="workbench" bindtap="onTabChange">
+    <text class="mini-tab-icon">🏥</text><text>工作台</text>
+  </view>
+  <view class="mini-tab {{activeTab === 'research' ? 'mini-tab--active' : ''}}" data-tab="research" bindtap="onTabChange">
+    <text class="mini-tab-icon">🔬</text><text>学术研发</text>
+  </view>
+  <view class="mini-tab {{activeTab === 'license' ? 'mini-tab--active' : ''}}" data-tab="license" bindtap="onTabChange">
+    <text class="mini-tab-icon">🪪</text><text>资质审定</text>
+  </view>
+</view>

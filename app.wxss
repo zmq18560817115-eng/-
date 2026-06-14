@@ -1,0 +1,57 @@
+@import './styles/common.wxss';
+
+page {
+  /* 配色 */
+  --kj-bg-page: #f1f5f9;
+  --kj-bg-card: #ffffff;
+  --kj-bg-muted: #f8fafc;
+  --kj-bg-indigo: #eef2ff;
+  --kj-border: #e2e8f0;
+  --kj-border-soft: rgba(226, 232, 240, 0.9);
+  --kj-primary: #6366f1;
+  --kj-primary-dark: #4f46e5;
+  --kj-primary-text: #4338ca;
+  --kj-primary-border: #c7d2fe;
+  --kj-text: #0f172a;
+  --kj-text-secondary: #334155;
+  --kj-text-muted: #64748b;
+  --kj-text-caption: #94a3b8;
+  --kj-success: #059669;
+  --kj-success-bg: #ecfdf5;
+  --kj-danger: #dc2626;
+  --kj-danger-bg: #fef2f2;
+  --kj-amber: #b45309;
+  --kj-amber-bg: #fffbeb;
+  --kj-pink: #db2777;
+  --kj-pink-bg: #fce7f3;
+  --kj-shadow: 0 4rpx 24rpx rgba(15, 23, 42, 0.05);
+
+  /* 圆角 — 全站统一 */
+  --kj-radius-xs: 8rpx;
+  --kj-radius-sm: 12rpx;
+  --kj-radius-md: 16rpx;
+  --kj-radius-lg: 20rpx;
+  --kj-radius-xl: 24rpx;
+  --kj-radius-full: 999rpx;
+
+  background-color: var(--kj-bg-page);
+  color: var(--kj-text);
+  font-size: 28rpx;
+  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  line-height: normal;
+  font-size: inherit;
+}
+
+button::after {
+  border: none;
+}
+
+.container {
+  padding: 24rpx 32rpx;
+}
