@@ -31,23 +31,19 @@ export function createApp() {
   app.use('/api/v1/clinical-cases', clinicalCasesRoutes);
   app.use('/api/v1/device', deviceRoutes);
 
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: '接口不存在' });
+  });
+
   if (process.env.NODE_ENV === 'production') {
     const distPath = path.join(__dirname, '..', 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res, next) => {
-      if (req.path.startsWith('/api')) {
-        next();
-        return;
-      }
+    app.use(express.static(distPath, { index: false }));
+    app.get('*', (_req, res, next) => {
       res.sendFile(path.join(distPath, 'index.html'), (err) => {
         if (err) next(err);
       });
     });
   }
-
-  app.use((_req, res) => {
-    res.status(404).json({ error: '接口不存在' });
-  });
 
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error('[KneeJoy API] 未处理异常:', err);
