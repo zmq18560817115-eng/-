@@ -31,6 +31,10 @@ export function loadDatabase(): void {
       } else {
         db = parsed;
         if (!db.therapy_logs) db.therapy_logs = [];
+        if (!db.physical_devices) {
+          db.physical_devices = createSeedDatabase().physical_devices ?? [];
+          persist();
+        }
       }
     } catch {
       db = createSeedDatabase();
@@ -107,6 +111,17 @@ function syncDemoSeedAccounts(): void {
     if (!db.family_bindings.some((b) => b.id === binding.id)) {
       db.family_bindings.push(binding);
       changed = true;
+    }
+  }
+  if (!db.physical_devices) {
+    db.physical_devices = seed.physical_devices ?? [];
+    changed = true;
+  } else {
+    for (const pd of seed.physical_devices ?? []) {
+      if (!db.physical_devices.some((d) => d.device_id === pd.device_id)) {
+        db.physical_devices.push(pd);
+        changed = true;
+      }
     }
   }
 

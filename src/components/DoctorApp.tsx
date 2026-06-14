@@ -261,8 +261,11 @@ export default function DoctorApp({
         }
       />
 
-      {/* Scrollable Container covering body, padded pb-[105px] according to iOS 26 layout specifications */}
-      <div className="flex-1 overflow-y-auto px-4 pt-3 pb-[105px] flex flex-col gap-4">
+      {/* Scrollable Container covering body, padded for fixed tab bar */}
+      <div
+        className="flex-1 overflow-y-auto px-4 pt-3 flex flex-col gap-4"
+        style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
+      >
 
       {/* 2. BODY CONTENT CARDS */}
       <div className="flex-1 flex flex-col gap-4">
@@ -764,8 +767,12 @@ export default function DoctorApp({
         )}
       </div></div>
 
-      {/* 2. BOTTOM TAB BAR NAVIGATOR (iOS 26 Floating Capsule HIG 21pt/21px Bottom & 62pt/62px Height) */}
-      <div className="absolute bottom-[21px] left-4 right-4 h-[62px] bg-white/94 backdrop-blur-md rounded-full border border-slate-200/60 shadow-lg shadow-indigo-100/30 grid grid-cols-3 gap-1 px-3 z-40 items-center justify-center">
+      {/* Fixed bottom tab bar — stays visible while content scrolls */}
+      <div
+        className="pointer-events-none fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+      >
+        <div className="pointer-events-auto mx-4 grid h-[62px] grid-cols-3 items-center justify-center gap-1 rounded-full border border-slate-200/60 bg-white/95 px-3 shadow-lg shadow-indigo-100/30 backdrop-blur-md">
         <button
           onClick={() => setActiveTab('workbench')}
           className={`h-11 rounded-full text-[10px] font-bold font-display flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer ${
@@ -799,6 +806,7 @@ export default function DoctorApp({
           <UserCheck size={18} className={activeTab === 'license' ? 'scale-105 stroke-[2.25]' : 'stroke-1.5'} />
           <span>数字资质</span>
         </button>
+        </div>
       </div>
 
       {/* ======================================================== */}

@@ -459,12 +459,12 @@ export default function App() {
   const handleLogin = async (role: 'patient' | 'doctor' | 'family') => {
     setFamilyNudgeReceived(null);
     setActiveRole(role);
-    setIsLoggedIn(true);
     if (role === 'patient') {
       await loadPatientData();
       await syncPatientRemind();
     } else if (role === 'doctor') await loadDoctorData();
     else await loadFamilyData();
+    setIsLoggedIn(true);
     pollNotifications();
   };
 

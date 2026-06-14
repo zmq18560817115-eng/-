@@ -14,6 +14,7 @@ import {
 } from '../db/therapy.js';
 import { calculateEuclideanMatch } from '../services/match.js';
 import { pushNotification } from '../services/notifications.js';
+import { queueDeviceCommand } from '../db/device-queue.js';
 import type { SymptomInput, TreatmentParams, TreatmentSession } from '../types.js';
 
 const router = Router();
@@ -198,6 +199,9 @@ router.patch('/me/device/connection', requireAuth, requireRole('patient'), (req:
     return res.status(409).json({ error: '理疗进行中，无法断开连接' });
   }
   device.connection = connection;
+  if (connection === 'wifi') {
+    queueDeviceCommand(patient.id, 'SYNC');
+  }
   persist();
   res.json(device);
 });
@@ -641,6 +645,10 @@ router.post('/me/treatment/sessions', requireAuth, requireRole('patient'), (req:
     right_force: params.right_force,
     temp: params.temp,
   });
+  queueDeviceCommand(patient.id, 'START', {
+    ...params,
+    max_force_limit: device.max_force_limit,
+  });
   persist();
   res.status(201).json(session);
 });
@@ -657,6 +665,7 @@ router.patch('/me/treatment/sessions/:id', requireAuth, requireRole('patient'), 
     session.ended_at = new Date().toISOString();
     const device = db.devices[patient.id];
     if (device) device.is_running = false;
+    queueDeviceCommand(patient.id, 'STOP');
   }
   persist();
   res.json(session);
@@ -678,6 +687,7 @@ router.post('/me/treatment/sessions/:id/complete', requireAuth, requireRole('pat
     device.time_left_seconds = 0;
     device.battery_level = Math.max(10, device.battery_level - 3);
   }
+  queueDeviceCommand(patient.id, 'STOP');
 
   const today = todayString();
   const exists = db.check_ins.some((c) => c.patient_id === patient.id && c.date === today);

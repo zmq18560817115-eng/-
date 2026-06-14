@@ -190,6 +190,31 @@ export interface AuthCode {
   used: boolean;
 }
 
+/** ESP32 等物理设备 ↔ 云端指令队列 */
+export type DeviceCommandType = 'NONE' | 'START' | 'STOP' | 'SYNC';
+
+export interface DeviceCommand {
+  id: string;
+  command: DeviceCommandType;
+  left_force?: number;
+  right_force?: number;
+  temp?: number;
+  vibration?: number;
+  duration?: number;
+  max_force_limit?: number;
+  issued_at: string;
+}
+
+export interface PhysicalDevice {
+  device_id: string;
+  /** 设备密钥，HTTP 头 X-Device-Token */
+  token: string;
+  patient_id: string;
+  name?: string;
+  pending_command: DeviceCommand | null;
+  last_seen_at?: string | null;
+}
+
 export interface Database {
   schema_version?: number;
   users: User[];
@@ -207,4 +232,5 @@ export interface Database {
   auth_codes: AuthCode[];
   bind_qr_tokens: Record<string, { patient_id: string; expires_at: string }>;
   sms_codes: Record<string, { code: string; expires_at: string }>;
+  physical_devices: PhysicalDevice[];
 }

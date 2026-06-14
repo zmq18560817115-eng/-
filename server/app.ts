@@ -9,6 +9,7 @@ import doctorsRoutes from './routes/doctors.js';
 import familyRoutes from './routes/family.js';
 import notificationsRoutes from './routes/notifications.js';
 import clinicalCasesRoutes from './routes/clinical-cases.js';
+import deviceRoutes from './routes/device.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +29,7 @@ export function createApp() {
   app.use('/api/v1/family', familyRoutes);
   app.use('/api/v1/notifications', notificationsRoutes);
   app.use('/api/v1/clinical-cases', clinicalCasesRoutes);
+  app.use('/api/v1/device', deviceRoutes);
 
   if (process.env.NODE_ENV === 'production') {
     const distPath = path.join(__dirname, '..', 'dist');

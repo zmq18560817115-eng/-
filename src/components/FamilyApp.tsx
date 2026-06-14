@@ -144,7 +144,10 @@ export default function FamilyApp({
       {/* MULTI-CHANNEL FAMILY COLD START BINDING WIZARD OVERLAY */}
       {/* ======================================================== */}
       {!isFamilyLinked && (
-        <div className="absolute inset-0 bg-slate-950/98 backdrop-blur-md rounded-[38px] z-50 flex flex-col p-5 text-white justify-between animate-in fade-in duration-300 select-none">
+        <div
+          className="fixed inset-0 z-[70] mx-auto flex max-w-[480px] flex-col bg-slate-950/98 p-5 text-white backdrop-blur-md animate-in fade-in duration-300 select-none justify-between"
+          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+        >
           <div className="flex flex-col items-center text-center mt-3 shrink-0">
             <div className="p-2.5 bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl shadow-lg flex items-center justify-center animate-bounce mb-2">
               <Heart size={20} className="text-white fill-pink-250" />
@@ -252,8 +255,12 @@ export default function FamilyApp({
         </div>
       )}
 
-      {/* Scrollable Container covering body, padded pb-[105px] according to iOS 26 layout specifications */}
-      <div className="flex-1 overflow-y-auto px-4 pt-3 pb-[105px] flex flex-col gap-4">
+      {/* Scrollable Container covering body, padded for fixed tab bar */}
+      {isFamilyLinked && (
+      <div
+        className="flex-1 overflow-y-auto px-4 pt-3 flex flex-col gap-4"
+        style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
+      >
 
       {/* 2. BODY CONTAINER FOR SUBVIEWS */}
       <div className="flex-1 flex flex-col gap-4">
@@ -565,9 +572,15 @@ export default function FamilyApp({
           </div>
         )}
       </div></div>
+      )}
 
-      {/* 2. BOTTOM TAB BAR NAVIGATOR (iOS 26 Floating Capsule HIG 21pt/21px Bottom & 62pt/62px Height) */}
-      <div className="absolute bottom-[21px] left-4 right-4 h-[62px] bg-white/94 backdrop-blur-md rounded-full border border-slate-200/60 shadow-lg shadow-pink-100/30 grid grid-cols-3 gap-1 px-3 z-40 items-center justify-center">
+      {/* Fixed bottom tab bar — stays visible while content scrolls */}
+      {isFamilyLinked && (
+      <div
+        className="pointer-events-none fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+      >
+        <div className="pointer-events-auto mx-4 grid h-[62px] grid-cols-3 items-center justify-center gap-1 rounded-full border border-slate-200/60 bg-white/95 px-3 shadow-lg shadow-pink-100/30 backdrop-blur-md">
         <button
           onClick={() => setActiveTab('guardian')}
           className={`h-11 rounded-full text-[10px] font-bold font-display flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer ${
@@ -601,7 +614,9 @@ export default function FamilyApp({
           <Settings size={18} className={activeTab === 'settings' ? 'scale-105 stroke-[2.25]' : 'stroke-1.5'} />
           <span>多联管理</span>
         </button>
+        </div>
       </div>
+      )}
 
     </div>
   );

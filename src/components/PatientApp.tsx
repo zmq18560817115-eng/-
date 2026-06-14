@@ -58,6 +58,18 @@ function hasTreatmentPlan(profile: PatientProfile): boolean {
   );
 }
 
+function shouldActivateColdBoot(profile: PatientProfile): boolean {
+  if (hasTreatmentPlan(profile)) return false;
+  if (profile.symptoms_assessed) return false;
+  return true;
+}
+
+function resolveInitialTherapyStep(
+  profile: PatientProfile
+): 'symptom' | 'matching' | 'chat_support' | 'control' {
+  return hasTreatmentPlan(profile) ? 'control' : 'symptom';
+}
+
 function isSymptomComplete(form: SymptomFormState): boolean {
   return (
     form.age !== '' &&
@@ -160,7 +172,7 @@ export default function PatientApp({
   // - 'control': Step 2 treatment console
   const [therapyStep, setTherapyStep] = useState<
     'symptom' | 'matching' | 'chat_support' | 'control'
-  >('symptom');
+  >(() => resolveInitialTherapyStep(patientProfile));
 
   // Live chat messages state for clinical assistance
   const [chatMessages, setChatMessages] = useState<Array<{ 
@@ -181,14 +193,20 @@ export default function PatientApp({
   const [isDoctorTyping, setIsDoctorTyping] = useState<boolean>(false);
 
   // Newcomer Coldboot States
-  const [isColdBootActive, setIsColdBootActive] = useState<boolean>(false);
+  const [isColdBootActive, setIsColdBootActive] = useState<boolean>(() =>
+    shouldActivateColdBoot(patientProfile)
+  );
   const [coldBootMethod, setColdBootMethod] = useState<'selection' | 'doctor' | 'assessment'>(
     'selection'
   );
   const [doctorCodeInput, setDoctorCodeInput] = useState<string>('');
   const [coldBootForm, setColdBootForm] = useState<SymptomFormState>(EMPTY_SYMPTOM);
 
-  const [symptomForm, setSymptomForm] = useState<SymptomFormState>(EMPTY_SYMPTOM);
+  const [symptomForm, setSymptomForm] = useState<SymptomFormState>(() =>
+    hasTreatmentPlan(patientProfile) || patientProfile.symptoms_assessed
+      ? profileToSymptomForm(patientProfile)
+      : EMPTY_SYMPTOM
+  );
 
   const [messageCenterOpen, setMessageCenterOpen] = useState(false);
   const [patientMessages, setPatientMessages] = useState<PatientMessage[]>([]);
@@ -867,7 +885,10 @@ export default function PatientApp({
       {/* THREE ROLES INITIAL NEWCOMER COLD START GUIDANCE OVERLAY */}
       {/* ======================================================== */}
       {isColdBootActive && (
-        <div className="absolute inset-0 bg-slate-950/98 backdrop-blur-md rounded-[38px] z-50 flex flex-col p-6 text-white animate-in fade-in duration-300 select-none">
+        <div
+          className="fixed inset-0 z-[70] mx-auto flex max-w-[480px] flex-col bg-slate-950/98 p-6 text-white backdrop-blur-md animate-in fade-in duration-300 select-none"
+          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+        >
           {/* Logo Heading */}
           <div className="flex flex-col items-center text-center mt-4 shrink-0">
             <KneeJoyBrandIcon size="lg" className="mb-3 animate-bounce" />
@@ -1083,6 +1104,7 @@ export default function PatientApp({
       )}
 
       {/* Scrollable content — bottom padding leaves room for fixed tab bar */}
+      {!isColdBootActive && !isConnecting && (
       <div
         className="flex-1 overflow-y-auto overscroll-y-contain px-4 pt-3 flex flex-col gap-4"
         style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
@@ -1389,7 +1411,7 @@ export default function PatientApp({
             )}
 
             {/* 1.2 THREE-STAGE HIGH-FIDELITY MEDICAL CLINIC FLOW SEQUENCER */}
-            {hardwareState.connection !== 'disconnected' && therapyStep === 'symptom' && (
+            {therapyStep === 'symptom' && (
               <div className="bg-white rounded-3xl p-5 shadow-md shadow-slate-100/60 flex flex-col gap-4 shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="flex items-center gap-2 justify-between">
                   <div className="flex items-center gap-2">
@@ -1537,7 +1559,7 @@ export default function PatientApp({
               </div>
             )}
             {/* STEP B: OPTIMIZED TREATMENT PLAN MATCHING REVIEW */}
-            {hardwareState.connection !== 'disconnected' && therapyStep === 'matching' && lastMatchResult && (
+            {therapyStep === 'matching' && lastMatchResult && (
               <div className="bg-white rounded-3xl p-4 shadow-md shadow-slate-150/60 flex flex-col gap-3 shrink-0 animate-in zoom-in-95 duration-200 text-slate-800">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                   <button 
@@ -1623,8 +1645,8 @@ export default function PatientApp({
             )}
 
             {/* STEP C: CLINICAL CO-STUDY ONLINE DOCTOR CHAT SERVICE */}
-            {hardwareState.connection !== 'disconnected' && therapyStep === 'chat_support' && (
-              <div className="bg-white rounded-3xl p-4 shadow-md shadow-slate-250/30 flex flex-col h-[480px] shrink-0 animate-in slide-in-from-right duration-350 text-slate-800">
+            {therapyStep === 'chat_support' && (
+              <div className="bg-white rounded-3xl p-4 shadow-md shadow-slate-250/30 flex flex-col min-h-[480px] shrink-0 animate-in slide-in-from-right duration-350 text-slate-800">
                 
                 {/* Chat header area with doctor avatar */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 shrink-0">
@@ -1764,7 +1786,7 @@ export default function PatientApp({
             )}
 
             {/* STEP D: THE CENTRAL THERAPEUTIC HARDWARE CONTROL PANEL Dashboard */}
-            {hardwareState.connection !== 'disconnected' && therapyStep === 'control' && (
+            {therapyStep === 'control' && (
               <div className="bg-white rounded-3xl p-5 shadow-md shadow-slate-100/60 flex flex-col gap-4 animate-in fade-in duration-200">
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex flex-col text-left">
@@ -2595,8 +2617,10 @@ export default function PatientApp({
           </div>
         )}
       </div></div>
+      )}
 
       {/* Fixed bottom tab bar — stays visible while content scrolls */}
+      {!isColdBootActive && !isConnecting && (
       <div
         className="pointer-events-none fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2"
         style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
@@ -2640,6 +2664,7 @@ export default function PatientApp({
         </button>
         </div>
       </div>
+      )}
 
     </div>
   );

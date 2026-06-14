@@ -430,5 +430,23 @@ export function createSeedDatabase(): Database {
     ],
     bind_qr_tokens: {},
     sms_codes: {},
+    physical_devices: [
+      {
+        device_id: 'KJ-DEMO-001',
+        token: 'kneejoy-demo-token-2026',
+        patient_id: '2001',
+        name: '膝悦演示理疗仪 #1',
+        pending_command: null,
+        last_seen_at: null,
+      },
+      {
+        device_id: 'KJ-DEMO-002',
+        token: 'kneejoy-demo-token-2026',
+        patient_id: '2002',
+        name: '膝悦演示理疗仪 #2',
+        pending_command: null,
+        last_seen_at: null,
+      },
+    ],
   };
 }

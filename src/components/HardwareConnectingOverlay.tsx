@@ -24,7 +24,7 @@ export default function HardwareConnectingOverlay({
 
   return (
     <div
-      className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/55 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[70] mx-auto flex max-w-[480px] items-center justify-center bg-slate-900/55 backdrop-blur-sm animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-label="正在连接理疗仪"

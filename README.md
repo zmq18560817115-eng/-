@@ -46,8 +46,9 @@ _archive/         已停更的微信小程序代码
 ## 软硬件后续路线
 
 1. **云端部署（免费）**：见 [docs/云端部署与硬件联调指南.md](docs/云端部署与硬件联调指南.md)，Render + Docker 一键部署  
-2. **真实硬件**：在 `src/hardware/` 实现 Wi-Fi/BLE 适配器，替换 `mockAdapter.ts`  
-3. **设备固件**：ESP32 协议与 `server/routes/patients.ts` 设备 telemetry 对齐  
+2. **软硬件结合（小白版）**：见 [docs/软硬件结合小白教程.md](docs/软硬件结合小白教程.md)，ESP32 + 推杆分步教程  
+3. **真实硬件**：在 `src/hardware/` 实现 Wi-Fi/BLE 适配器，替换 `mockAdapter.ts`  
+4. **设备固件**：ESP32 协议与 `server/routes/patients.ts` 设备 telemetry 对齐  
 
 ## 其他命令
 
