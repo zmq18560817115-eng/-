@@ -1,169 +1,162 @@
-# ESP32 固件 — 超详细小白步骤
+# ESP32 固件 — 推杆 + 加热 + 震动
 
-> 文件夹：`firmware/esp32-kneejoy/`  
-> 云端 API 已就绪：`/api/v1/device/commands` 和 `/api/v1/device/telemetry`
+> 路径：`firmware/esp32-kneejoy/KneeJoy_Device/`  
+> 专业人员交付文档：**[交付说明.md](../../交付说明.md)**
 
 ---
 
-## 第 0 步：你要准备什么
-
-
-| 物品          | 说明                      |
-| ----------- | ----------------------- |
-| ESP32 开发板   | 带 Wi-Fi，常见 ESP32-DevKit |
-| USB 数据线     | 能传数据（不是只能充电的线）          |
-| 电脑          | Mac / Windows 都行        |
-| Arduino IDE | 免费软件，后面会教安装             |
-| 路由器 Wi-Fi   | ESP32 要能上网              |
-
-
-**演示设备账号（已写在云端）：**
+## 架构（与 Web UI 对齐）
 
 ```
-设备 ID：  KJ-DEMO-001
-设备密钥： kneejoy-demo-token-2026
-绑定患者：18612345678 / pass_pat_1（王大爷）
+手机 Web UI 点「开始理疗」
+        ↓ HTTPS
+云服务器写入 START { left_force, right_force, temp, vibration, duration }
+        ↓ Wi-Fi 每 2 秒轮询
+ESP32 cloud_client
+        ↓
+TherapySession 统一调度
+   ├─ ActuatorDriver   左右推杆（拉力 N → PWM / L298N H桥）
+   ├─ HeaterDriver     加热（temp ℃ → PWM）
+   └─ VibrationDriver  震动（0~3 档 → PWM）
+        ↑
+SafetyMonitor（安全夹 GPIO34 + 急停 GPIO35）
 ```
 
----
-
-## 第 1 步：安装 Arduino IDE（10 分钟）
-
-1. 打开 [https://www.arduino.cc/en/software](https://www.arduino.cc/en/software) 下载安装
-2. 打开 Arduino IDE
-3. 菜单 **Arduino IDE → Settings → Additional boards manager URLs**
-4. 粘贴：`https://espressif.github.io/arduino-esp32/package_esp32_index.json`
-5. **Tools → Board → Boards Manager**，搜索 **esp32**，安装 **esp32 by Espressif**
-6. **Tools → Board → ESP32 Arduino → ESP32 Dev Module**
-
----
-
-## 第 2 步：打开我们的代码（5 分钟）
-
-1. 在 Arduino IDE：**File → Open**
-2. 选项目里的文件：
-  `firmware/esp32-kneejoy/KneeJoy_Device/KneeJoy_Device.ino`
-3. 把同目录上一级的 `config.example.h` **复制一份**，改名为 `**config.h`**
-  （和 .ino 同目录，或放在 `KneeJoy_Device/` 里 — 与 .ino 同文件夹即可）
-4. 用记事本打开 `config.h`，只改这两行：
-
-```cpp
-#define WIFI_SSID "你家的WiFi名字"
-#define WIFI_PASSWORD "你家的WiFi密码"
-```
-
-其他先别动。
-
----
-
-## 第 3 步：接线（面包板演示，15 分钟）
-
-默认引脚（可在 config.h 改）：
-
-
-| ESP32 引脚 | 接什么               | 说明                  |
-| -------- | ----------------- | ------------------- |
-| GPIO 25  | 推杆驱动 IN1 或 LED+电阻 | 左侧拉力                |
-| GPIO 26  | 推杆驱动 IN2 或 LED+电阻 | 右侧拉力                |
-| GPIO 27  | LED 或加热模块         | 加热演示                |
-| GPIO 14  | LED 或震动模块         | 震动演示                |
-| GPIO 34  | 安全夹开关一端           | 另一端接 **GND**；插紧=LOW |
-| GPIO 2   | 板载蓝灯              | 运行时会亮               |
-
-
-**没有推杆时**：只接 2 个 LED 也能演示「START 灯亮、STOP 灯灭」。
-
----
-
-## 第 4 步：上传程序（5 分钟）
-
-1. USB 连接 ESP32 和电脑
-2. **Tools → Port** 选 `/dev/cu.usbserial-xxx`（Mac）或 COM 口（Windows）
-3. 点击 **→ 上传**（箭头按钮）
-4. 等底部显示 **Done uploading**
-
----
-
-## 第 5 步：看串口是否成功（最重要）
-
-1. **Tools → Serial Monitor**
-2. 右下角选 **115200 baud**
-3. 按一下 ESP32 的 **RST** 复位键
-
-**成功时应看到：**
-
-```
-========================================
-  膝悦 KneeJoy ESP32 固件启动
-  设备ID: KJ-DEMO-001
-========================================
-[Wi-Fi] 已连接 IP=192.168.x.x
-[云端] Ping 成功，设备通道 OK
-[云端] 状态已上报
-```
-
-如果 Ping 失败：检查 `DEVICE_ID` / `DEVICE_TOKEN` 是否和上面一致。
-
-如果 Wi-Fi 失败：检查 config.h 里的名字密码。
-
----
-
-## 第 6 步：手机和云联动（完整演示）
-
-### 6.1 确保云端最新代码已部署
-
-后端加了设备 API，需要 push 到 GitHub，等 Render 部署 Live。
-
-### 6.2 操作顺序
-
-1. **ESP32 上电**，串口看到 Ping 成功
-2. 手机浏览器打开 **[https://kneejoy.onrender.com](https://kneejoy.onrender.com)**
-3. 登录 **18612345678 / pass_pat_1**
-4. 在「康复设置」里点 **Wi-Fi 连接**（告诉云：要用 Wi-Fi 设备）
-5. 回到「智能康复」，点 **开始理疗**
-6. **串口应出现：** `[云端] 命令=START` → `[硬件] START ...`
-7. 点 **停止** → 串口 `命令=STOP` → 灯灭/推杆停
-
----
-
-## 常见问题
-
-### Q：串口一直「连接失败 kneejoy.onrender.com」
-
-- 等 30 秒再试（Render 免费版可能在睡觉）  
-- 手机浏览器先打开 health 页面唤醒
-
-### Q：命令一直是 NONE
-
-- 网页要先点 **Wi-Fi 连接**  
-- 要点 **开始理疗**（不是只改参数）  
-- 患者必须是 **王大爷**（设备绑在 2001 账号）
-
-### Q：START 但硬件不动
-
-- 看串口是否「安全夹未插紧」→ 把 GPIO34 接 GND  
-- 检查推杆/LED 接线
+| UI 参数 | 固件模块 | 物理含义 |
+|---------|----------|----------|
+| `left_force` / `right_force` | `actuator.cpp` | 推杆伸出速度/力度 |
+| `temp` | `heater.cpp` | 加热 PWM（35~50℃ 映射） |
+| `vibration` | `vibration.cpp` | 震动档位 0~3 |
+| `duration` | `therapy_session.cpp` | 倒计时，到 0 自动 STOP |
+| 安全夹 | `safety.cpp` | 未插紧拒绝 START，运行中脱落紧急停 |
 
 ---
 
 ## 文件说明
 
-
-| 文件                   | 作用                            |
-| -------------------- | ----------------------------- |
-| `KneeJoy_Device.ino` | 主程序                           |
-| `config.h`           | 你的 Wi-Fi 和引脚（自己创建，勿上传 GitHub） |
-| `config.example.h`   | 配置模板                          |
-
-
----
-
-## 下一步（真实推杆）
-
-1. 把 GPIO25/26 接到 **L298N / 继电器模块** 再接推杆
-2. 把 `map(...)` PWM 改成你的 driver 逻辑
-3. 安全夹、急停按钮必须接在 ESP32 上，不能只在网页判断
+| 文件 | 作用 |
+|------|------|
+| `KneeJoy_Device.ino` | 主程序：初始化 + 主循环 |
+| `actuator.cpp` | 推杆驱动（移植 STM32 motor.c 正/停逻辑） |
+| `heater.cpp` | 加热驱动 |
+| `vibration.cpp` | 震动驱动 |
+| `therapy_session.cpp` | START/STOP/SYNC + 倒计时 |
+| `safety.cpp` | 安全夹、急停、拉力校验 |
+| `cloud_client.cpp` | Wi-Fi + 云端轮询/上报 |
+| `serial_cmd.cpp` | 串口本地调试（无需云端） |
+| `config.h` | Wi-Fi、引脚、硬件模式（自己创建） |
 
 ---
 
-**一句话：** 上传固件 → 串口 Ping 成功 → 手机点开始 → 串口出现 START → 推杆/LED 动。
+## 第 1 步：安装 Arduino IDE
+
+1. 下载 [Arduino IDE](https://www.arduino.cc/en/software)
+2. **Settings → Additional boards manager URLs** 添加：  
+   `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
+3. **Boards Manager** 安装 **esp32 by Espressif**
+4. **Tools → Board → ESP32 Dev Module**
+
+---
+
+## 第 2 步：配置并上传
+
+1. 打开 `KneeJoy_Device/KneeJoy_Device.ino`
+2. 复制 `config.example.h` → `config.h`（同目录）
+3. 修改 `config.h` 里的 Wi-Fi 名称和密码
+4. USB 连接 ESP32，**Tools → Port** 选择串口
+5. 点击上传
+
+---
+
+## 第 3 步：接线
+
+### 模式 A — DEMO_LED（默认，无推杆也能演示）
+
+在 `config.h` 中保持：
+```cpp
+#define HARDWARE_PROFILE PROFILE_DEMO_LED
+```
+
+| ESP32 引脚 | 接什么 |
+|------------|--------|
+| GPIO 25 | LED + 220Ω（左推杆模拟） |
+| GPIO 26 | LED + 220Ω（右推杆模拟） |
+| GPIO 27 | LED + 220Ω（加热模拟） |
+| GPIO 14 | LED + 220Ω（震动模拟） |
+| GPIO 34 | 安全夹开关 → GND（插紧=LOW） |
+| GPIO 2 | 板载蓝灯（运行亮） |
+
+### 模式 B — L298N 真实推杆
+
+```cpp
+#define HARDWARE_PROFILE PROFILE_L298N
+```
+
+| ESP32 | L298N |
+|-------|-------|
+| GPIO 25 (ENA) | 左电机 EN |
+| GPIO 32/33 (IN1/IN2) | 左电机方向 |
+| GPIO 26 (ENB) | 右电机 EN |
+| GPIO 27/14 (IN3/IN4) | 右电机方向 |
+| GPIO 18 | 加热 MOSFET 门极 |
+| GPIO 19 | 震动 MOSFET 门极 |
+
+**注意：** 加热片、震动马达、推杆电机必须经驱动模块，勿 GPIO 直连。
+
+---
+
+## 第 4 步：本地测试（不连云）
+
+1. 打开串口监视器 **115200**
+2. 安全夹 GPIO34 接 GND
+3. 发送：
+
+```
+@STxCMD: L_F=15,R_F=15,TEMP=42,VIB=1,DUR=1
+```
+
+应看到四个 LED/模块同时工作，1 分钟后自动停。
+
+停止：
+```
+@STxSTOP
+```
+
+---
+
+## 第 5 步：与手机 UI 联调（本地）
+
+1. 电脑运行 `bash start-dev.sh`（API 在 3001 端口）
+2. `config.h` 里把 `API_HOST` 改为你电脑局域网 IP（如 `192.168.1.100`），`API_PORT` 改 `3001`
+3. ESP32 上电，串口出现 `[云端] Ping 成功`
+4. 手机浏览器打开 `http://你的电脑IP:3000`
+5. 登录 **18612345678 / pass_pat_1**
+6. 设置页点 **Wi-Fi 连接** → 康复页点 **开始理疗**
+7. 串口应出现：`[云端] 命令=START` → `[理疗] START L=15N ...`
+
+---
+
+## 常见问题
+
+| 现象 | 处理 |
+|------|------|
+| 拒绝 START：安全夹未插紧 | GPIO34 接 GND |
+| 命令一直是 NONE | 网页先 Wi-Fi 连接，再点开始理疗 |
+| Ping 失败 | 检查 DEVICE_ID / TOKEN；确认 API_HOST 为电脑 IP 且 server 已启动 |
+| 推杆不动但 LED 亮 | 改 `PROFILE_L298N` 并检查 L298N 接线/供电 |
+
+---
+
+## 从 STM32 迁移了什么
+
+| STM32 原功能 | ESP32 对应 |
+|--------------|------------|
+| `Motor1_CW` / `Motor2_CW` 推杆伸出 | `ActuatorDriver::setLeft/RightForce` |
+| `Motor_Stop` 停止 | `ActuatorDriver::stopAll` |
+| 超重 >7kg 停推杆 | 暂无 HX711；可后续加 ADC/传感器模块 |
+| 按键控制 | 改为云端/串口 `@STxCMD` 控制 |
+| LCD 显示 | 改为串口日志 + 手机 UI 显示 |
+
+---
+
+**一句话：** 上传 v2 固件 → 串口 `@STxCMD` 本地三模块能动 → Ping 成功 → 手机点开始 → 推杆+加热+震动联动。

@@ -10,9 +10,5 @@ coverage/
 .env*
 !.env.example
 
-# ESP32 本地 Wi-Fi 配置（含密码）
+# ESP32 本地 Wi-Fi 配置（含密码，勿提交）
 firmware/**/config.h
-
-# 微信开发者工具本地配置（若曾在根目录打开过小程序）
-project.private.config.json
-miniprogram_npm/

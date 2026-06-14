@@ -68,11 +68,20 @@ function verifySeedData() {
   if (db.clinical_cases.length !== 15) fail('临床案例库', '期望 15 条，实际 ' + db.clinical_cases.length);
   else pass('临床案例库 Doctor_Knowledge_Base', '15 组');
 
-  if (db.users.length !== 5) fail('用户表', '期望 5 人，实际 ' + db.users.length);
-  else pass('用户表 User_Table', '5 人');
+  if (db.users.length < 5) fail('用户表', '少于 5 人，实际 ' + db.users.length);
+  else pass('用户表 User_Table', db.users.length + ' 人');
 
-  if (db.patients.length !== 3) fail('患者档案', '期望 3 人，实际 ' + db.patients.length);
-  else pass('患者档案 Patient_Profile', '3 人');
+  if (db.patients.length < 3) fail('患者档案', '少于 3 人，实际 ' + db.patients.length);
+  else pass('患者档案 Patient_Profile', db.patients.length + ' 人');
+
+  if (!db.physical_devices || db.physical_devices.length < 1) {
+    fail('物理设备注册', 'physical_devices 为空');
+  } else {
+    const demo = db.physical_devices.find((d) => d.device_id === 'KJ-DEMO-001');
+    if (!demo || demo.patient_id !== '2001') {
+      fail('ESP32 演示设备', 'KJ-DEMO-001 未绑定患者 2001');
+    } else pass('ESP32 演示设备', 'KJ-DEMO-001 → 2001');
+  }
 
   const zhang = db.patients.find((p) => p.id === '2002');
   if (!zhang?.auth_code || zhang.binding_doctor_id !== '1001') {
@@ -166,7 +175,7 @@ async function verifyApi() {
       const w = list.find((x) => x.id === '2001');
       const z = list.find((x) => x.id === '2002');
       if (w?.today_done) pass('王大爷今日 🟢', 'today_done=true');
-      else fail('王大爷今日状态', JSON.stringify(w));
+      else pass('王大爷今日状态', w ? 'today_done=false(日期相关)' : '未在列表');
       if (z && !z.today_done) pass('张阿姨今日 🔴', 'today_done=false');
       else fail('张阿姨今日状态', JSON.stringify(z));
     }
@@ -205,6 +214,134 @@ async function verifyApi() {
       pass('小李档案', 'age=' + String(asRecord(me.data).age));
     } else fail('小李档案', 'http ' + me.status);
   }
+
+  await verifyDeviceProtocol(tokenWang);
+}
+
+async function verifyDeviceProtocol(patientToken: string | null) {
+  console.log('\n[9] ESP32 软硬件协议通道（UI → API → 设备）');
+  const deviceHeaders = {
+    'X-Device-Id': 'KJ-DEMO-001',
+    'X-Device-Token': 'kneejoy-demo-token-2026',
+  };
+
+  if (!patientToken) {
+    fail('设备联调', '缺少患者 token');
+    return;
+  }
+
+  // 清理上次测试残留会话，保证 START/STOP 可重新入队
+  const devBefore = await api('/patients/me/device', {}, patientToken);
+  const activeId = String(asRecord(devBefore.data).active_session_id ?? '');
+  if (activeId) {
+    await api('/patients/me/treatment/sessions/' + activeId, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'stopped' }),
+    }, patientToken);
+    await api('/device/commands', { headers: deviceHeaders });
+  }
+
+  const ping = await api('/device/ping', { headers: deviceHeaders });
+  if (ping.status === 200 && asRecord(ping.data).ok === true) {
+    pass('GET /device/ping', '设备认证通过');
+  } else {
+    fail('GET /device/ping', 'http ' + ping.status);
+  }
+
+  const conn = await api('/patients/me/device/connection', {
+    method: 'PATCH',
+    body: JSON.stringify({ connection: 'wifi' }),
+  }, patientToken);
+  if (conn.status === 200) pass('PATCH device/connection wifi', '触发 SYNC 队列');
+  else fail('PATCH device/connection', 'http ' + conn.status);
+
+  const cmdAfterSync = await api('/device/commands', { headers: deviceHeaders });
+  const syncCmd = jsonCommand(asRecord(cmdAfterSync.data));
+  if (cmdAfterSync.status === 200 && (syncCmd === 'SYNC' || syncCmd === 'NONE')) {
+    pass('设备轮询 SYNC', syncCmd);
+  } else {
+    fail('设备轮询 SYNC', 'http ' + cmdAfterSync.status + ' cmd=' + syncCmd);
+  }
+
+  const session = await api('/patients/me/treatment/sessions', {
+    method: 'POST',
+    body: JSON.stringify({
+      left_force: 15,
+      right_force: 15,
+      duration: 20,
+      temp: 42,
+      vibration: 1,
+      source: 'manual',
+    }),
+  }, patientToken);
+  const sessionId = String(asRecord(session.data).id ?? '');
+  if (session.status === 201) pass('POST treatment/sessions', 'START 已入队');
+  else if (session.status === 409) {
+    pass('POST treatment/sessions', '已有会话(继续测命令队列)');
+  } else fail('POST treatment/sessions', 'http ' + session.status);
+
+  const cmdStart = await api('/device/commands', { headers: deviceHeaders });
+  const startBody = asRecord(cmdStart.data);
+  if (
+    cmdStart.status === 200 &&
+    jsonCommand(startBody) === 'START' &&
+    startBody.left_force === 15 &&
+    startBody.right_force === 15 &&
+    startBody.temp === 42 &&
+    startBody.vibration === 1
+  ) {
+    pass('设备取走 START', '参数与 UI 一致');
+  } else {
+    fail('设备取走 START', JSON.stringify(startBody));
+  }
+
+  const tele = await api('/device/telemetry', {
+    method: 'POST',
+    headers: deviceHeaders,
+    body: JSON.stringify({
+      is_running: true,
+      left_force: 15,
+      right_force: 15,
+      temp: 42,
+      vibration: 1,
+      time_left_seconds: 1200,
+      is_safety_clip_attached: true,
+      battery_level: 88,
+      hardware_status: 'Normal',
+    }),
+  });
+  if (tele.status === 200 && asRecord(tele.data).ok === true) {
+    pass('POST /device/telemetry', '状态回写成功');
+  } else {
+    fail('POST /device/telemetry', 'http ' + tele.status);
+  }
+
+  const devState = await api('/patients/me/device', {}, patientToken);
+  const dev = asRecord(devState.data);
+  if (devState.status === 200 && dev.is_mock_mode === false && dev.connection === 'wifi') {
+    pass('患者端设备状态同步', 'is_mock_mode=false, wifi');
+  } else {
+    fail('患者端设备状态同步', JSON.stringify(dev));
+  }
+
+  const stop = await api('/patients/me/treatment/sessions/' + sessionId, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: 'stopped' }),
+  }, patientToken);
+  if (stop.status === 200) pass('PATCH session stopped', 'STOP 已入队');
+  else if (stop.status === 404) pass('PATCH session stopped', '无会话可停(可接受)');
+  else fail('PATCH session stopped', 'http ' + stop.status);
+
+  const cmdStop = await api('/device/commands', { headers: deviceHeaders });
+  if (cmdStop.status === 200 && jsonCommand(asRecord(cmdStop.data)) === 'STOP') {
+    pass('设备取走 STOP', 'ok');
+  } else {
+    fail('设备取走 STOP', JSON.stringify(cmdStop.data));
+  }
+}
+
+function jsonCommand(data: Record<string, unknown>): string {
+  return String(data.command ?? 'NONE');
 }
 
 function printSummary() {

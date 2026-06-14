@@ -355,10 +355,13 @@ export async function submitDoctorVerification(data: {
   license_id: string;
   certificate_file?: string;
 }) {
-  return request('/doctors/me/verification', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  return request<{ is_verified: boolean; dept?: string; license_id?: string }>(
+    '/doctors/me/verification',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  );
 }
 
 export async function sendPrescription(patientId: string, params: TreatmentParams) {

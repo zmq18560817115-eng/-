@@ -525,13 +525,13 @@ export default function App() {
       setHardwareState((prev) => ({
         ...prev,
         connection: transport,
-        battery_level: result.device!.battery_level ?? prev.battery_level,
+        battery_level: result.device!.batteryLevel ?? prev.battery_level,
       }));
       setConnectionPhase('connected');
 
       if (apiOnline) {
         updateDeviceConnection(transport).catch(() => undefined);
-        syncDeviceTelemetry({ connection: transport, battery_level: result.device.battery_level }).catch(
+        syncDeviceTelemetry({ connection: transport, battery_level: result.device.batteryLevel }).catch(
           () => undefined
         );
       }
