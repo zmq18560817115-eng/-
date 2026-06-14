@@ -9,11 +9,16 @@
 #define WIFI_SSID "你的WiFi名称"
 #define WIFI_PASSWORD "你的WiFi密码"
 
-// ===== 2. API 服务器（本地联调）=====
-// 填你电脑的局域网 IP，先运行 bash start-dev.sh
-#define API_HOST "192.168.1.100"
-#define API_PORT 3001
-#define API_USE_TLS 0   // 本地 HTTP=0；远程 HTTPS=1
+// ===== 2. API 服务器 =====
+// 【云部署·推荐】不依赖电脑，手机打开 https://kneejoy.onrender.com
+#define API_HOST "kneejoy.onrender.com"
+#define API_PORT 443
+#define API_USE_TLS 1
+
+// 【本地联调】改用电脑局域网 IP，并设 API_USE_TLS 0、API_PORT 3001
+// #define API_HOST "192.168.1.100"
+// #define API_PORT 3001
+// #define API_USE_TLS 0
 
 // ===== 3. 设备身份（与云端 seed 一致）=====
 // 绑定患者 18612345678 / pass_pat_1（王大爷）

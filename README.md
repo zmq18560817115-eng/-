@@ -27,17 +27,18 @@ bash start-dev.sh
 
 ## ESP32 配置（三步）
 
-```bash
-# 1. 生成 config.h 并自动填入本机 IP
-bash scripts/setup-esp32-config.sh
+`config.h` 已默认连接云服务器 **kneejoy.onrender.com**（无需开电脑）。
 
-# 2. 编辑固件目录下的 config.h，填写 Wi-Fi 名称和密码
+```bash
+# 1. 编辑固件目录下的 config.h，只填 Wi-Fi 名称和密码
 #    firmware/esp32-kneejoy/KneeJoy_Device/config.h
 
-# 3. Arduino IDE 打开 KneeJoy_Device.ino 上传
+# 2. Arduino IDE 打开 KneeJoy_Device.ino 上传
+
+# 3. 手机打开 https://kneejoy.onrender.com 联调
 ```
 
-当前本机 IP 已预填为 **10.46.115.204**（换网络后重新运行 setup 脚本）。
+本地联调时把 `config.h` 改为电脑 IP + `API_PORT 3001` + `API_USE_TLS 0`，或运行 `bash scripts/setup-esp32-config.sh`。
 
 ## 串口快速测试（115200）
 
