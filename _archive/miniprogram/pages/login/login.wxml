@@ -33,8 +33,10 @@
     <view class="net-status {{serverOk ? 'net-status--ok' : 'net-status--bad'}}">
       <text wx:if="{{serverOk}}">● 后端已连接：{{apiHost}}</text>
       <text wx:else>● 后端未连接（{{apiHost}}）</text>
-      <text wx:if="{{!serverOk && apiRemote}}" class="net-tip">请确认公网服务器已启动，且公众平台已配置 request 合法域名</text>
-      <text wx:elif="{{!serverOk}}" class="net-tip">Mac 运行 start-production.sh；手机需与 Mac 同一 WiFi；IP 变了请改 app.js 后重新上传</text>
+      <text wx:if="{{!serverOk && apiRemote}}" class="net-tip">请确认隧道/公网服务在运行，且公众平台已配置 request 合法域名（勿填 https:// 和分号）</text>
+      <text wx:elif="{{!serverOk && isTrial}}" class="net-tip">当前为体验版：局域网 IP 不可用，须配置 PROD_API_HOST（ngrok HTTPS）并重新上传</text>
+      <text wx:elif="{{!serverOk && isDevtools}}" class="net-tip">当前为开发者工具模拟器，请在本机运行 start-production.sh；测体验版请用真机扫码</text>
+      <text wx:elif="{{!serverOk}}" class="net-tip">请确认：① Mac 已运行 start-production.sh ② 手机连与 Mac 同一 WiFi（关闭蜂窝/关闭 WiFi 助理）③ 开发者工具真机预览并勾选「不校验合法域名」</text>
     </view>
   </block>
 

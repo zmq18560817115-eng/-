@@ -32,6 +32,8 @@ Page({
     serverOk: false,
     apiHost: '',
     apiRemote: false,
+    isDevtools: false,
+    isTrial: false,
     roles: [
       { id: 'patient', emoji: '👤', bgClass: 'bg-indigo', title: '我是患者', desc: '开启今日关节理疗与康复行为打卡' },
       { id: 'doctor', emoji: '🩺', bgClass: 'bg-emerald', title: '我是康复医生/专家', desc: '管理签约患者，下发数字化理疗处方' },
@@ -46,9 +48,19 @@ Page({
 
   onShow: function () {
     var app = getApp();
+    var platform = '';
+    var envVersion = '';
+    try {
+      platform = wx.getDeviceInfo ? wx.getDeviceInfo().platform : wx.getSystemInfoSync().platform;
+    } catch (e) {}
+    try {
+      envVersion = wx.getAccountInfoSync().miniProgram.envVersion || '';
+    } catch (e2) {}
     this.setData({
       apiHost: app.globalData.apiHost,
       apiRemote: !!app.globalData.apiRemote,
+      isDevtools: platform === 'devtools',
+      isTrial: envVersion === 'trial',
     });
     this.checkServer();
   },

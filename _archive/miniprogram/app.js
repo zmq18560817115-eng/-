@@ -8,15 +8,18 @@
  *   - 手机必须与 Mac 同一 WiFi
  *
  * 【场景 B】体验版给外地的人扫码（推荐答辩/远程演示）：
- *   - 把后端部署到有 HTTPS 的公网地址（云服务器 / 内网穿透）
- *   - 填写 PROD_API_HOST，例如 'https://your-domain.com'
- *   - 公众平台 → 开发设置 → 服务器域名 → request 合法域名 添加该域名
- *   - 改完后重新「上传」并「设为体验版」
+ *   - 终端1：bash scripts/start-production.sh（保持运行）
+ *   - 终端2：bash scripts/start-experience.sh（保持运行，关掉即 503）
+ *   - 浏览器验证 https://你的域名/api/v1/health 返回 ok 后再上传
+ *   - 填写 PROD_API_HOST（localtunnel 示例：'https://xxx.loca.lt'）
+ *   - 公众平台 → 开发设置 → 服务器域名 → request 合法域名（只填域名，无 https://）
+ *   - localtunnel 不稳定时：ngrok config add-authtoken <token> 后 TUNNEL=ngrok bash scripts/start-experience.sh
  *
  * 模拟器始终用 127.0.0.1，不受下面两项影响。
  */
-var PROD_API_HOST = 'https://dull-parks-buy.loca.lt';
-var LAN_API_HOST = 'http://192.168.101.226:8080';
+// localtunnel 目前极不稳定，legal-bugs-tease.loca.lt 常会 503，请改用 ngrok 或同 WiFi
+var PROD_API_HOST = '';
+var LAN_API_HOST = 'http://10.46.115.204:8080';
 
 function getPlatform() {
   try {
@@ -30,12 +33,15 @@ function getPlatform() {
 }
 
 function resolveApiHost() {
-  if (getPlatform() === 'devtools') {
-    return 'http://127.0.0.1:8080';
-  }
+  // 体验版/真机：优先公网地址（填 PROD_API_HOST 后重新上传）
   if (PROD_API_HOST) {
     return PROD_API_HOST.replace(/\/$/, '');
   }
+  // 仅开发者工具模拟器走本地
+  if (getPlatform() === 'devtools') {
+    return 'http://127.0.0.1:8080';
+  }
+  // 同 WiFi 真机预览
   return LAN_API_HOST;
 }
 
