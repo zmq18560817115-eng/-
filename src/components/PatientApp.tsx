@@ -591,6 +591,32 @@ export default function PatientApp({
     }
   };
 
+  const handleApplyDoctorPrescription = async () => {
+    const rx = patientProfile.current_prescription;
+    if (!rx || isApplyingPrescription) return;
+    setIsApplyingPrescription(true);
+    setTempParams({
+      left_force: rx.left_force,
+      right_force: rx.right_force,
+      duration: rx.duration,
+      temp: rx.temp,
+      vibration: rx.vibration,
+    });
+    try {
+      await onAcceptPrescription(rx);
+      setIsManualMode(false);
+      setTherapyStep('control');
+      setActiveTab('therapy');
+      onSendHardwareAction(
+        `[医嘱绿色通道] 一键应用主治方案：L=${rx.left_force}N, R=${rx.right_force}N, T=${rx.temp}℃`
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '医嘱应用失败，请重试');
+    } finally {
+      setIsApplyingPrescription(false);
+    }
+  };
+
   // Cold start completion triggers
   const handleDoctorCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1056,8 +1082,11 @@ export default function PatientApp({
         </div>
       )}
 
-      {/* Scrollable Container covering body, padded pb-[105px] according to iOS 2 layout specifications */}
-      <div className="flex-1 overflow-y-auto px-4 pt-3 pb-[105px] flex flex-col gap-4">
+      {/* Scrollable content — bottom padding leaves room for fixed tab bar */}
+      <div
+        className="flex-1 overflow-y-auto overscroll-y-contain px-4 pt-3 flex flex-col gap-4"
+        style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
+      >
 
         {/* 1. FAMILY NUDGE TOAST BANNER */}
         {familyNudgeReceived !== null && (
@@ -1108,10 +1137,11 @@ export default function PatientApp({
             {patientProfile.current_prescription && (
               <button
                 type="button"
-                onClick={() => onAcceptPrescription(patientProfile.current_prescription!)}
-                className="self-end px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[9px] font-bold"
+                disabled={isApplyingPrescription}
+                onClick={handleApplyDoctorPrescription}
+                className="self-end cursor-pointer rounded-lg bg-emerald-600 px-2.5 py-1 text-[9px] font-bold text-white transition hover:bg-emerald-700 active:scale-95 disabled:opacity-60"
               >
-                一键应用医嘱方案
+                {isApplyingPrescription ? '正在应用…' : '一键应用医嘱方案'}
               </button>
             )}
           </div>
@@ -2566,9 +2596,14 @@ export default function PatientApp({
         )}
       </div></div>
 
-      {/* 2. BOTTOM TAB BAR NAVIGATOR (iOS 26 Floating Capsule HIG 21pt/21px Bottom & 62pt/62px Height) */}
-      <div className="absolute bottom-[21px] left-4 right-4 h-[62px] bg-white/94 backdrop-blur-md rounded-full border border-slate-200/60 shadow-lg shadow-indigo-100/30 grid grid-cols-3 gap-1 px-3 z-40 items-center justify-center">
+      {/* Fixed bottom tab bar — stays visible while content scrolls */}
+      <div
+        className="pointer-events-none fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+      >
+        <div className="pointer-events-auto mx-4 grid h-[62px] grid-cols-3 items-center justify-center gap-1 rounded-full border border-slate-200/60 bg-white/95 px-3 shadow-lg shadow-indigo-100/30 backdrop-blur-md">
         <button
+          type="button"
           onClick={() => setActiveTab('therapy')}
           className={`h-11 rounded-full text-[10px] font-bold font-display flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer ${
             activeTab === 'therapy'
@@ -2580,6 +2615,7 @@ export default function PatientApp({
           <span>智能康复</span>
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('incentive')}
           className={`h-11 rounded-full text-[10px] font-bold font-display flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer ${
             activeTab === 'incentive'
@@ -2591,6 +2627,7 @@ export default function PatientApp({
           <span>健康激励</span>
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('settings')}
           className={`h-11 rounded-full text-[10px] font-bold font-display flex flex-col items-center justify-center gap-0.5 transition-all duration-200 cursor-pointer ${
             activeTab === 'settings'
@@ -2601,6 +2638,7 @@ export default function PatientApp({
           <Settings size={18} className={activeTab === 'settings' ? 'scale-105 stroke-[2.25]' : 'stroke-1.5'} />
           <span>康复设置</span>
         </button>
+        </div>
       </div>
 
     </div>

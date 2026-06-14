@@ -393,6 +393,32 @@ export default function App() {
         setPrescriptionReviewMeta(null);
         return;
       } catch {
+        /* 降级为下方同步 */
+      }
+    }
+
+    if (apiOnline) {
+      try {
+        const device = await syncDeviceTelemetry({
+          left_force: prescription.left_force,
+          right_force: prescription.right_force,
+          duration: prescription.duration,
+          temp: prescription.temp,
+          vibration: prescription.vibration,
+          time_left_seconds: prescription.duration * 60,
+        });
+        setHardwareState(device);
+        setPatientProfile((prev) => ({
+          ...prev,
+          current_prescription: prescription,
+          onboarding_completed: true,
+        }));
+        setRemotePrescription(null);
+        setPendingPrescriptionId(null);
+        setPrescriptionDetailOpen(false);
+        setPrescriptionReviewMeta(null);
+        return;
+      } catch {
         /* 降级为本地更新 */
       }
     }
@@ -613,8 +639,6 @@ export default function App() {
   return (
     <div className="min-h-[100dvh] bg-slate-100 antialiased">
       <AppShell
-          batteryLevel={hardwareState.battery_level}
-          connectionStatus={hardwareState.connection}
           activeNotification={activeNotification}
           onClearNotification={handleClearNotification}
           onViewPrescription={handleViewPrescriptionNotification}
