@@ -9,7 +9,7 @@ import {
   HelpCircle, ShieldCheck, Heart, Radio, RefreshCw, UserCheck, AlertTriangle,
   ArrowLeft, MessageSquare, Check, ChevronRight, Bell, ClipboardList, Lightbulb,
   PersonStanding, Zap, Footprints, BookOpen, Timer, Lock, Sprout, Trees, Shield,
-  HeartHandshake, Users, LogOut, Trophy, TrendingUp, Mountain, Bluetooth, Wifi,
+  HeartHandshake, Users, LogOut, Trophy, TrendingUp, Mountain, Bluetooth, Wifi, Send,
 } from 'lucide-react';
 import {
   SymptomInput,
@@ -174,6 +174,13 @@ export default function PatientApp({
     'symptom' | 'matching' | 'chat_support' | 'control'
   >(() => resolveInitialTherapyStep(patientProfile));
 
+  const isClinicalAssessmentFlow =
+    therapyStep === 'symptom' ||
+    therapyStep === 'matching' ||
+    therapyStep === 'chat_support';
+  const showOfflineRehabDashboard =
+    therapyStep === 'control' && !isHardwareLinked && !isConnecting;
+
   // Live chat messages state for clinical assistance
   const [chatMessages, setChatMessages] = useState<Array<{ 
     sender: 'user' | 'doctor', 
@@ -191,6 +198,7 @@ export default function PatientApp({
 
   // Is typing simulator state for doctor chatbot realism
   const [isDoctorTyping, setIsDoctorTyping] = useState<boolean>(false);
+  const [chatDraft, setChatDraft] = useState<string>('');
 
   // Newcomer Coldboot States
   const [isColdBootActive, setIsColdBootActive] = useState<boolean>(() =>
@@ -480,45 +488,69 @@ export default function PatientApp({
   };
 
   // Interactive Live Chat response simulation
-  const handleSendChatOption = (optionText: string, actionType: number) => {
-    // Append user's question first
+  const handleSendChatMessage = (optionText: string, actionType?: number) => {
+    const trimmed = optionText.trim();
+    if (!trimmed || isDoctorTyping) return;
+
     const now = new Date();
     const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    const userMsg = { sender: 'user' as const, text: optionText, time: timeStr };
-    setChatMessages(prev => [...prev, userMsg]);
+    const userMsg = { sender: 'user' as const, text: trimmed, time: timeStr };
+    setChatMessages((prev) => [...prev, userMsg]);
+    setChatDraft('');
     setIsDoctorTyping(true);
 
-    // Simulate clinical doctor responding shortly
     setTimeout(() => {
       let docText = '';
-      let targetParams: TreatmentParams = { left_force: 15, right_force: 15, temp: 42, duration: 20, vibration: 1 };
-      
+      let targetParams: TreatmentParams = {
+        left_force: 15,
+        right_force: 15,
+        temp: 42,
+        duration: 20,
+        vibration: 1,
+      };
+
       if (actionType === 1) {
         docText = `针对您反馈的高痛感局域表现（当前自测VAS ${symptomForm.pain_score}分），强牵拉容易引起韧带与滑液囊的防御性紧绷。建议您第一周期采用温和的12N拉力自适应微调！红外热敷保持在43℃，促进局部炎性物质消退。我已经为您专门重新配置了下方的特配理疗包。`;
         targetParams = { left_force: 12, right_force: 12, temp: 43, duration: 20, vibration: 1 };
       } else if (actionType === 2) {
         docText = `关节积液量在 ${symptomForm.joint_fluid} 级（少量中量出液）通常处于炎症发红消胀期。此时建议温度控制在39℃低温热敷促进吸收，不宜大负荷揉捏。我已将时限改短为15分钟以保万全，您可以直接一键应用特配方案。`;
         targetParams = { left_force: 11, right_force: 11, temp: 39, duration: 15, vibration: 0 };
-      } else {
+      } else if (actionType === 3) {
         docText = `陈旧性骨折与半月板退行性损伤对高负载极为抗拒。为了防止二次剪切压强伤害，建议使用特配的“陈旧性小肌群微负压防护操”。牵引拉力卡死在 10N 起步安全阈值，热温40℃配合低频轻震。配方已为您定制！`;
         targetParams = { left_force: 10, right_force: 10, temp: 40, duration: 18, vibration: 1 };
+      } else {
+        docText = `我已收到您的补充描述。结合您当前 VAS ${symptomForm.pain_score} 分、磨损 ${symptomForm.cartilage_wear} 级与积液 ${symptomForm.joint_fluid} 级的自评结果，建议先从低拉力、短时长起步，若出现刺痛或肿胀加重请立即停止并告知我。下方为您生成一版更保守的特调参数，可一键同步至理疗中枢。`;
+        const base = lastMatchResult?.details?.treatment;
+        targetParams = {
+          left_force: Math.max(10, (base?.left_force ?? 15) - 3),
+          right_force: Math.max(10, (base?.right_force ?? 15) - 3),
+          temp: Math.min(43, base?.temp ?? 42),
+          duration: Math.max(15, (base?.duration ?? 20) - 3),
+          vibration: base?.vibration ?? 1,
+        };
       }
 
-      setChatMessages(prev => [
-        ...prev, 
+      setChatMessages((prev) => [
+        ...prev,
         { sender: 'doctor' as const, text: docText, time: timeStr },
-        { 
-          sender: 'doctor' as const, 
-          text: `【三甲专家特配处方包】参数已为您直接回传至中枢：拉引力 ${targetParams.left_force}N, 恒温加热 ${targetParams.temp}℃, 恒湿理疗 ${targetParams.duration}分钟。`, 
+        {
+          sender: 'doctor' as const,
+          text: `【三甲专家特配处方包】参数已为您直接回传至中枢：拉引力 ${targetParams.left_force}N, 恒温加热 ${targetParams.temp}℃, 恒湿理疗 ${targetParams.duration}分钟。`,
           time: timeStr,
           isAction: true,
-          actionParams: targetParams
-        }
+          actionParams: targetParams,
+        },
       ]);
       setIsDoctorTyping(false);
 
-      onSendHardwareAction(`[医患在线干预] 临床支持专家李敬东重设底层处方：L_F=${targetParams.left_force}N, Temp=${targetParams.temp}℃, 时限 ${targetParams.duration}m`);
+      onSendHardwareAction(
+        `[医患在线干预] 临床支持专家李敬东重设底层处方：L_F=${targetParams.left_force}N, Temp=${targetParams.temp}℃, 时限 ${targetParams.duration}m`
+      );
     }, 1200);
+  };
+
+  const handleSendChatOption = (optionText: string, actionType: number) => {
+    handleSendChatMessage(optionText, actionType);
   };
 
   // Doctor treatment parameter adoption
@@ -1177,7 +1209,8 @@ export default function PatientApp({
         {activeTab === 'therapy' && (
           <div className="flex-1 flex flex-col gap-4">
             
-            {/* 1.0 BLUETOOTH DEVICE CONNECTION STATUS WIDGET */}
+            {/* 1.0 BLUETOOTH DEVICE CONNECTION STATUS WIDGET — 仅在控制面板/离线首页展示 */}
+            {!isClinicalAssessmentFlow && (
             <div className="bg-white rounded-3xl p-4.5 shadow-md shadow-slate-100/60 flex flex-col gap-2.5 shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-left">
@@ -1267,10 +1300,13 @@ export default function PatientApp({
                 </div>
               )}
             </div>
+            )}
 
+            {/* 1.0b / 1.1 离线徒手康复 — 仅在控制面板且未连接设备时展示，不与自评/匹配/聊天混排 */}
+            {showOfflineRehabDashboard && (
+              <>
             {/* 1.0b DUAL-MODE DISCONNECTED AIR TRACTION REHAB CARD */}
-            {!isHardwareLinked && !isConnecting && (
-              <div className="bg-gradient-to-r from-amber-550/10 to-amber-50 rounded-3xl p-4.5 border border-amber-200 shadow-sm shrink-0 text-slate-800 flex flex-col gap-3 animate-in slide-in-from-top duration-300">
+            <div className="bg-gradient-to-r from-amber-550/10 to-amber-50 rounded-3xl p-4.5 border border-amber-200 shadow-sm shrink-0 text-slate-800 flex flex-col gap-3 animate-in slide-in-from-top duration-300">
                 <span className="inline-flex max-w-fit items-center gap-1.5 text-xs font-black text-amber-800 uppercase bg-amber-100 px-2.5 py-1 rounded-lg">
                   <Lightbulb size={13} strokeWidth={2.2} />
                   居家自练保健指南
@@ -1311,11 +1347,9 @@ export default function PatientApp({
                   跟着做完了（点这里一键打卡）
                 </button>
               </div>
-            )}
 
             {/* 1.1 ADDED OFFLINE REHAB CONTENT & HEALTH普及 SECTIONS FOR GERIATRICS */}
-            {hardwareState.connection === 'disconnected' && (
-              <div className="flex flex-col gap-4 animate-in slide-in-from-bottom duration-350">
+            <div className="flex flex-col gap-4 animate-in slide-in-from-bottom duration-350">
                 {/* 1.1a Other Exercises section */}
                 <div className="bg-white rounded-3xl p-4.5 shadow-md shadow-slate-100/40 flex flex-col gap-3 text-left">
                   <div className="flex items-center justify-between">
@@ -1408,6 +1442,7 @@ export default function PatientApp({
                   </div>
                 </div>
               </div>
+              </>
             )}
 
             {/* 1.2 THREE-STAGE HIGH-FIDELITY MEDICAL CLINIC FLOW SEQUENCER */}
@@ -1770,6 +1805,38 @@ export default function PatientApp({
                     >
                       ❓ 慢磨损退行性病理，可以采用全方位的弱压抗拉低震防护吗？
                     </button>
+                  </div>
+
+                  {/* Direct text input for free-form doctor Q&A */}
+                  <div className="border-t border-slate-100 pt-2 shrink-0 flex flex-col gap-1.5">
+                    <span className="text-[9px] text-slate-400 font-bold text-left">
+                      或直接输入您的问题，李主任在线回复：
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={chatDraft}
+                        onChange={(e) => setChatDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleSendChatMessage(chatDraft);
+                          }
+                        }}
+                        placeholder="例如：我膝盖弯曲时有咔咔声，还能拉伸吗？"
+                        disabled={isDoctorTyping}
+                        className="flex-1 min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[11px] font-medium text-slate-800 placeholder:text-slate-400 focus:border-indigo-400 focus:bg-white focus:outline-none disabled:opacity-50"
+                      />
+                      <button
+                        type="button"
+                        disabled={!chatDraft.trim() || isDoctorTyping}
+                        onClick={() => handleSendChatMessage(chatDraft)}
+                        className="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm transition hover:bg-indigo-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label="发送消息"
+                      >
+                        <Send size={16} strokeWidth={2.2} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Return quick buttons */}
