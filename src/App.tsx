@@ -116,7 +116,7 @@ export default function App() {
       emergency_contact?: boolean;
     }>
   >([]);
-  const [connectionPhase, setConnectionPhase] = useState<ConnectionPhase>('disconnected');
+  const [connectionPhase, setConnectionPhase] = useState<ConnectionPhase>('connected');
   const [connectingTransport, setConnectingTransport] = useState<HardwareTransport | null>(null);
   const [connectionProgress, setConnectionProgress] = useState<ConnectionProgress | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
@@ -150,6 +150,10 @@ export default function App() {
     } catch {
       setApiOnline(false);
       setPatientFamilyBindings([]);
+      setHardwareState((prev) => {
+        setConnectionPhase(prev.connection === 'disconnected' ? 'disconnected' : 'connected');
+        return prev;
+      });
     }
   }, []);
 

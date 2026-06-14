@@ -161,7 +161,9 @@ export default function PatientApp({
 }: PatientAppProps) {
   const isConnecting = connectionPhase === 'connecting';
   const isHardwareLinked =
-    connectionPhase === 'connected' && hardwareState.connection !== 'disconnected';
+    !isConnecting &&
+    connectionPhase !== 'failed' &&
+    hardwareState.connection !== 'disconnected';
   // Navigation inside Patient App
   const [activeTab, setActiveTab] = useState<'therapy' | 'incentive' | 'settings'>('therapy');
 
@@ -180,6 +182,10 @@ export default function PatientApp({
     therapyStep === 'chat_support';
   const showOfflineRehabDashboard =
     therapyStep === 'control' && !isHardwareLinked && !isConnecting;
+  const showControlPanel =
+    therapyStep === 'control' && isHardwareLinked && !isConnecting;
+  /** 详细徒手动作库与控制面板/离线简版首页分开展示，避免同屏混排 */
+  const showDetailedManualExerciseLibrary = false;
 
   // Live chat messages state for clinical assistance
   const [chatMessages, setChatMessages] = useState<Array<{ 
@@ -1853,7 +1859,7 @@ export default function PatientApp({
             )}
 
             {/* STEP D: THE CENTRAL THERAPEUTIC HARDWARE CONTROL PANEL Dashboard */}
-            {therapyStep === 'control' && (
+            {showControlPanel && (
               <div className="bg-white rounded-3xl p-5 shadow-md shadow-slate-100/60 flex flex-col gap-4 animate-in fade-in duration-200">
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex flex-col text-left">
@@ -2052,8 +2058,8 @@ export default function PatientApp({
               </div>
             )}
 
-            {/* 1.3 DISCONNECTED EXCLUSIVES: NO-DEVICE EXERCISE ACTION SELECTOR & HEALTH EDUCATION LIBRARY */}
-            {hardwareState.connection === 'disconnected' && (
+            {/* 1.3 免设备动作库 — 独立模块，不与控制面板或离线简版首页同屏 */}
+            {showOfflineRehabDashboard && showDetailedManualExerciseLibrary && (
               <div className="flex flex-col gap-4 animate-in fade-in duration-300">
                 
                 {/* 1.3a No-Equipment Stretching Action Library */}

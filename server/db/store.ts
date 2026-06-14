@@ -99,6 +99,14 @@ function syncDemoSeedAccounts(): void {
     if (!db.devices[pid]) {
       db.devices[pid] = device;
       changed = true;
+    } else if (
+      !db.devices[pid].is_running &&
+      device.connection !== 'disconnected' &&
+      db.devices[pid].connection === 'disconnected'
+    ) {
+      // 演示账号（如王大爷）重启后恢复默认蓝牙已配对态，避免一直显示离线
+      db.devices[pid].connection = device.connection;
+      changed = true;
     }
   }
   for (const code of seed.auth_codes) {
