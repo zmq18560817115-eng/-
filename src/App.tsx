@@ -9,7 +9,7 @@ import {
   HardwareState, AppNotification 
 } from './types';
 import { initialClinicalCases } from './data';
-import PhoneShell from './components/PhoneShell';
+import AppShell from './components/AppShell';
 import PatientApp from './components/PatientApp';
 import DoctorApp from './components/DoctorApp';
 import FamilyApp from './components/FamilyApp';
@@ -611,16 +611,13 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 antialiased">
-      <div className="w-full max-w-[426px]">
-        
-        <PhoneShell
+    <div className="min-h-[100dvh] bg-slate-100 antialiased">
+      <AppShell
           batteryLevel={hardwareState.battery_level}
           connectionStatus={hardwareState.connection}
           activeNotification={activeNotification}
           onClearNotification={handleClearNotification}
           onViewPrescription={handleViewPrescriptionNotification}
-          currentRole={activeRole}
           onRoleClick={(role) => {
             if (!isLoggedIn) return;
             setActiveRole(role);
@@ -733,9 +730,7 @@ export default function App() {
               )}
             </>
           )}
-        </PhoneShell>
-
-      </div>
+        </AppShell>
     </div>
   );
 }

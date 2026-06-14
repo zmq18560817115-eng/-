@@ -54,6 +54,18 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+}
+
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  overscroll-behavior-y: none;
+  background-color: #f1f5f9;
 }
 
 /* Custom Soft-Shadow & High-Density Styles */
