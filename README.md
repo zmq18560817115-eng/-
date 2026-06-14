@@ -45,9 +45,9 @@ _archive/         已停更的微信小程序代码
 
 ## 软硬件后续路线
 
-1. **云端部署**：`Dockerfile` + Render/Railway（API 与 Web 一体）
-2. **真实硬件**：在 `src/hardware/` 实现 BLE/Wi-Fi 适配器，替换 `mockAdapter.ts`
-3. **设备固件**：ESP32 协议与 `server/routes/patients.ts` 设备 telemetry 对齐
+1. **云端部署（免费）**：见 [docs/云端部署与硬件联调指南.md](docs/云端部署与硬件联调指南.md)，Render + Docker 一键部署  
+2. **真实硬件**：在 `src/hardware/` 实现 Wi-Fi/BLE 适配器，替换 `mockAdapter.ts`  
+3. **设备固件**：ESP32 协议与 `server/routes/patients.ts` 设备 telemetry 对齐  
 
 ## 其他命令
 
