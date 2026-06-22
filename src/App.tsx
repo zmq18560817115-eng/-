@@ -47,11 +47,16 @@ import {
   connectHardwareDevice,
   disconnectHardwareDevice,
 } from './hardware/connectionManager';
+import {
+  deviceController,
+  statusToHardwarePatch,
+} from './hardware/deviceController';
 import type {
   ConnectionPhase,
   ConnectionProgress,
   HardwareTransport,
 } from './hardware/types';
+import DeviceDebugPanel from './components/DeviceDebugPanel';
 
 export default function App() {
   // 1. GLOBAL CLINICAL STATES WITH PERSISTENT PROGRESS
@@ -526,12 +531,24 @@ export default function App() {
         ...prev,
         connection: transport,
         battery_level: result.device!.batteryLevel ?? prev.battery_level,
+        is_mock_mode: transport !== 'wifi',
       }));
       setConnectionPhase('connected');
 
+      if (transport === 'wifi') {
+        deviceController.startPolling((status) => {
+          setHardwareState((current) => ({
+            ...current,
+            ...statusToHardwarePatch(status),
+            connection: 'wifi',
+            is_mock_mode: false,
+          }));
+        });
+      }
+
       if (apiOnline) {
         updateDeviceConnection(transport).catch(() => undefined);
-        syncDeviceTelemetry({ connection: transport, battery_level: result.device.batteryLevel }).catch(
+        syncDeviceTelemetry({ connection: transport, battery_level: result.device!.batteryLevel }).catch(
           () => undefined
         );
       }
@@ -566,6 +583,7 @@ export default function App() {
       return;
     }
     try {
+      deviceController.stopPolling();
       await disconnectHardwareDevice();
     } catch {
       /* ignore */
@@ -581,6 +599,50 @@ export default function App() {
   const handleUpdateHardware = (updates: Partial<HardwareState>) => {
     setHardwareState((prev) => {
       const next = { ...prev, ...updates };
+
+      if (next.connection === 'wifi') {
+        if (updates.is_running === true) {
+          deviceController
+            .startTherapy({
+              left_force: next.left_force,
+              right_force: next.right_force,
+              temp: next.temp,
+              vibration: next.vibration,
+            })
+            .then(() => deviceController.pollOnce())
+            .then((status) => {
+              setHardwareState((current) => ({
+                ...current,
+                ...statusToHardwarePatch(status),
+                is_running: true,
+                time_left_seconds: next.time_left_seconds,
+              }));
+            })
+            .catch((err) => {
+              handleAddSerialLog(
+                `[硬件下发失败] ${err instanceof Error ? err.message : '未知错误'}`
+              );
+            });
+        }
+        if (updates.is_running === false) {
+          deviceController
+            .stop()
+            .then(() => deviceController.pollOnce())
+            .then((status) => {
+              setHardwareState((current) => ({
+                ...current,
+                ...statusToHardwarePatch(status),
+                is_running: false,
+              }));
+            })
+            .catch((err) => {
+              handleAddSerialLog(
+                `[硬件急停失败] ${err instanceof Error ? err.message : '未知错误'}`
+              );
+            });
+        }
+      }
+
       if (apiOnline && updates.is_running === true && !activeSessionId) {
         startTreatmentSession({
           left_force: next.left_force,
@@ -709,6 +771,14 @@ export default function App() {
                   onDisconnectDevice={handleDisconnectDevice}
                   onCancelConnect={handleCancelConnect}
                   onPatientProfileUpdate={setPatientProfile}
+                />
+              )}
+
+              {activeRole === 'patient' && (
+                <DeviceDebugPanel
+                  hardwareState={hardwareState}
+                  onUpdateHardware={handleUpdateHardware}
+                  onLog={handleAddSerialLog}
                 />
               )}
 

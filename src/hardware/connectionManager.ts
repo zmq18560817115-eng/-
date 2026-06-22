@@ -1,4 +1,5 @@
 import { MockHardwareAdapter, beginConnectSession, cancelMockConnect } from './mockAdapter';
+import { WifiHttpAdapter } from './wifiHttpAdapter';
 import type {
   ConnectResult,
   ConnectionProgress,
@@ -6,7 +7,10 @@ import type {
   HardwareTransport,
 } from './types';
 
-let adapter: HardwareConnectionAdapter = new MockHardwareAdapter();
+const hardwareMode = import.meta.env.VITE_HARDWARE_MODE ?? 'mock';
+
+let adapter: HardwareConnectionAdapter =
+  hardwareMode === 'wifi' ? new WifiHttpAdapter() : new MockHardwareAdapter();
 
 /** 接入真实硬件时：setHardwareAdapter(new YourBleAdapter()) */
 export function setHardwareAdapter(next: HardwareConnectionAdapter): void {

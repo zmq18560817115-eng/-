@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "verify:api": "tsx scripts/verify-api.ts"
+    "verify:api": "tsx scripts/verify-api.ts",
+    "verify:device": "tsx scripts/verify-device-api.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
