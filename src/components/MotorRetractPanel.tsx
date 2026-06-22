@@ -5,14 +5,15 @@ import {
   getStoredDeviceIp,
   statusToHardwarePatch,
 } from '../hardware/deviceController';
-import type { MotorSide } from '../hardware/deviceApi';
+import type { DeviceStatus, MotorSide } from '../hardware/deviceApi';
 import type { HardwareState } from '../types';
 
 interface MotorRetractPanelProps {
   hardwareState: HardwareState;
   onUpdateHardware?: (updates: Partial<HardwareState>) => void;
   onLog?: (message: string) => void;
-  compact?: boolean;
+  /** control = 理疗控制面板「开始治疗」下方；debug = 硬件联调浮窗 */
+  variant?: 'control' | 'debug';
 }
 
 const SIDE_LABELS: Record<MotorSide, string> = {
@@ -25,21 +26,25 @@ export default function MotorRetractPanel({
   hardwareState,
   onUpdateHardware,
   onLog,
-  compact = false,
+  variant = 'control',
 }: MotorRetractPanelProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeSide, setActiveSide] = useState<MotorSide | null>(null);
 
-  const canUseDeviceApi =
+  const linked = hardwareState.connection !== 'disconnected';
+  const canCallDeviceApi =
     hardwareState.connection === 'wifi' &&
     !hardwareState.is_mock_mode &&
     Boolean(getStoredDeviceIp());
 
   const deviceStatus = deviceController.lastDeviceStatus;
   const estopBlocked = deviceStatus?.estop === true;
+  const retractDisabled =
+    busy || hardwareState.is_running || estopBlocked || !linked;
 
   const refreshStatus = async () => {
+    if (!canCallDeviceApi) return null;
     const next = await deviceController.pollOnce();
     onUpdateHardware?.(statusToHardwarePatch(next));
     return next;
@@ -49,6 +54,11 @@ export default function MotorRetractPanel({
     setBusy(true);
     setError(null);
     try {
+      if (!canCallDeviceApi) {
+        onLog?.(`[推杆缩回·演示] ${label}（Mock：请 Wi-Fi 连接设备并填写 IP 后下发真实指令）`);
+        if (side) setActiveSide(side);
+        return;
+      }
       await fn();
       await refreshStatus();
       if (side) setActiveSide(side);
@@ -67,81 +77,139 @@ export default function MotorRetractPanel({
 
   const handleStopRetract = () =>
     runMotor('停止缩回', async () => {
-      await deviceController.stopMotorRetract('all');
+      if (canCallDeviceApi) await deviceController.stopMotorRetract('all');
       setActiveSide(null);
     });
 
-  if (hardwareState.connection !== 'wifi') {
-    return null;
+  if (variant === 'debug') {
+    return (
+      <DebugMotorPanel
+        busy={busy}
+        error={error}
+        activeSide={activeSide}
+        canCallDeviceApi={canCallDeviceApi}
+        estopBlocked={estopBlocked}
+        hardwareState={hardwareState}
+        deviceStatus={deviceStatus}
+        onRetract={handleRetract}
+        onStopRetract={handleStopRetract}
+      />
+    );
   }
 
+  if (!linked) return null;
+
   return (
-    <div
-      className={`rounded-2xl border border-amber-200/80 bg-amber-50/70 ${
-        compact ? 'p-3' : 'p-4'
-      }`}
-    >
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <div>
-          <p className="text-xs font-black text-amber-950">推杆手动缩回</p>
-          <p className="mt-0.5 text-[10px] leading-snug text-amber-800/90">
-            治疗结束后力闭环不会自动缩回，请手动缩回推杆；缩回为持续运动，完成后请点「停止缩回」。
-          </p>
-        </div>
-        {activeSide && (
-          <span className="shrink-0 rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-900">
-            {SIDE_LABELS[activeSide]}缩回中
+    <div className="flex flex-col gap-2.5 pt-1">
+      <button
+        type="button"
+        disabled={retractDisabled}
+        onClick={() => handleRetract('all')}
+        className="w-full py-3 rounded-2xl font-black text-sm border-2 border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm transition flex items-center justify-center gap-2 hover:bg-indigo-100 hover:border-indigo-300 disabled:opacity-45 disabled:cursor-not-allowed"
+      >
+        <ArrowDownToLine size={16} />
+        缩回推杆
+        {activeSide === 'all' && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-200/80">
+            缩回中
           </span>
         )}
-      </div>
+      </button>
 
-      {!canUseDeviceApi && (
-        <p className="mb-2 text-[10px] font-bold text-amber-700">
-          请通过 Wi-Fi 连接真实设备（硬件联调面板填写 IP）后使用。
-        </p>
-      )}
-
-      {deviceStatus && (deviceStatus.motor_l_end !== 0 || deviceStatus.motor_r_end !== 0) && (
-        <p className="mb-2 text-[10px] font-bold text-rose-700">
-          推杆已触达末端保护（左 {deviceStatus.motor_l_end} / 右 {deviceStatus.motor_r_end}）
-        </p>
-      )}
-
-      <div className={`grid gap-2 ${compact ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'}`}>
-        {(['left', 'right', 'all'] as MotorSide[]).map((side) => (
+      <div className="grid grid-cols-3 gap-2">
+        {(['left', 'right'] as MotorSide[]).map((side) => (
           <button
             key={side}
             type="button"
-            disabled={busy || !canUseDeviceApi || estopBlocked || hardwareState.is_running}
+            disabled={retractDisabled}
             onClick={() => handleRetract(side)}
-            className="flex items-center justify-center gap-1 rounded-xl border border-amber-300/80 bg-white px-2 py-2 text-[11px] font-black text-amber-950 shadow-sm transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-45"
+            className="py-2 rounded-xl text-[11px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-45 disabled:cursor-not-allowed"
           >
-            <ArrowDownToLine size={13} />
-            {SIDE_LABELS[side]}缩回
+            {SIDE_LABELS[side]}
           </button>
         ))}
         <button
           type="button"
-          disabled={busy || !canUseDeviceApi || estopBlocked}
+          disabled={busy || estopBlocked || !linked}
           onClick={handleStopRetract}
-          className={`flex items-center justify-center gap-1 rounded-xl bg-slate-800 px-2 py-2 text-[11px] font-black text-white shadow-sm transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-45 ${
-            compact ? 'col-span-2' : 'col-span-2 sm:col-span-1'
-          }`}
+          className="py-2 rounded-xl text-[11px] font-bold border border-slate-300 bg-slate-800 text-white hover:bg-slate-900 disabled:opacity-45 disabled:cursor-not-allowed flex items-center justify-center gap-1"
         >
-          <Square size={12} />
-          停止缩回
+          <Square size={11} />
+          停止
         </button>
       </div>
 
+      <p className="text-[10px] text-center text-slate-500 leading-snug px-1">
+        治疗结束后请手动缩回推杆；缩回为持续运动，完成后点「停止」。
+        {!canCallDeviceApi && linked && ' · 演示模式：Wi-Fi 填 IP 后下发真实 API。'}
+      </p>
+
       {hardwareState.is_running && (
-        <p className="mt-2 text-[10px] text-amber-800">请先结束治疗，再进行推杆缩回。</p>
+        <p className="text-[10px] text-center font-bold text-rose-600">请先结束治疗，再缩回推杆。</p>
       )}
-
       {estopBlocked && (
-        <p className="mt-2 text-[10px] font-bold text-rose-700">设备处于急停状态，请先复位后再缩回。</p>
+        <p className="text-[10px] text-center font-bold text-rose-600">设备急停中，请先复位。</p>
       )}
+      {error && <p className="text-[10px] text-center font-bold text-rose-600">{error}</p>}
+    </div>
+  );
+}
 
+function DebugMotorPanel({
+  busy,
+  error,
+  activeSide,
+  canCallDeviceApi,
+  estopBlocked,
+  hardwareState,
+  deviceStatus,
+  onRetract,
+  onStopRetract,
+}: {
+  busy: boolean;
+  error: string | null;
+  activeSide: MotorSide | null;
+  canCallDeviceApi: boolean;
+  estopBlocked: boolean;
+  hardwareState: HardwareState;
+  deviceStatus: DeviceStatus | null;
+  onRetract: (side: MotorSide) => void;
+  onStopRetract: () => void;
+}) {
+  return (
+    <div className="mt-3 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-3">
+      <p className="text-xs font-black text-amber-950 mb-2">推杆缩回 · 调试</p>
+      {!canCallDeviceApi && (
+        <p className="mb-2 text-[10px] font-bold text-amber-700">填写 IP 并连接后可调用 POST /api/motor</p>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        {(['left', 'right', 'all'] as MotorSide[]).map((side) => (
+          <button
+            key={side}
+            type="button"
+            disabled={busy || estopBlocked || hardwareState.is_running}
+            onClick={() => onRetract(side)}
+            className="rounded-xl border border-amber-300/80 bg-white px-2 py-2 text-[11px] font-black disabled:opacity-45"
+          >
+            {SIDE_LABELS[side]}缩回
+            {activeSide === side ? '…' : ''}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={busy || estopBlocked}
+          onClick={onStopRetract}
+          className="col-span-2 rounded-xl bg-slate-800 py-2 text-[11px] font-black text-white disabled:opacity-45"
+        >
+          停止缩回
+        </button>
+      </div>
       {error && <p className="mt-2 text-[10px] font-bold text-rose-700">{error}</p>}
+      {deviceStatus && (deviceStatus.motor_l_end !== 0 || deviceStatus.motor_r_end !== 0) && (
+        <p className="mt-2 text-[10px] font-bold text-rose-700">
+          末端保护 L{deviceStatus.motor_l_end} / R{deviceStatus.motor_r_end}
+        </p>
+      )}
     </div>
   );
 }

@@ -216,10 +216,10 @@ export default function DeviceDebugPanel({
           </div>
 
           <MotorRetractPanel
+            variant="debug"
             hardwareState={hardwareState}
             onUpdateHardware={onUpdateHardware}
             onLog={onLog}
-            compact
           />
 
           <label className="mb-3 mt-3 flex items-center gap-2 text-[11px] font-bold text-slate-600">

@@ -2035,12 +2035,6 @@ export default function PatientApp({
                   </div>
                 </div>
 
-                <MotorRetractPanel
-                  hardwareState={hardwareState}
-                  onUpdateHardware={onUpdateHardware}
-                  onLog={onSendHardwareAction}
-                />
-
                 {/* CORE LAUNCH SWITCHES BUTTONS */}
                 <button
                   onClick={handleToggleTherapy}
@@ -2062,6 +2056,13 @@ export default function PatientApp({
                     </>
                   )}
                 </button>
+
+                <MotorRetractPanel
+                  variant="control"
+                  hardwareState={hardwareState}
+                  onUpdateHardware={onUpdateHardware}
+                  onLog={onSendHardwareAction}
+                />
               </div>
             )}
 
