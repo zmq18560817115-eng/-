@@ -14,6 +14,15 @@ if [ ! -d node_modules ]; then
   npm install
 fi
 
+if command -v lsof >/dev/null 2>&1; then
+  PIDS=$(lsof -ti :3000 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then
+    echo "释放占用 3000 端口的进程（避免与和拍等项目冲突）…"
+    kill $PIDS 2>/dev/null || true
+    sleep 1
+  fi
+fi
+
 echo "启动后端 API :3001（热重载）..."
 npm run dev:server &
 API_PID=$!
