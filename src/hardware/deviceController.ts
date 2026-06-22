@@ -3,13 +3,17 @@ import {
   faultLabel,
   getDeviceStatus,
   pingDevice,
+  postMotor,
   postReset,
   postStop,
   postTare,
   postTherapy,
   type DeviceInfo,
   type DeviceStatus,
+  type MotorSide,
 } from './deviceApi';
+
+export type { MotorSide };
 
 const DEVICE_IP_KEY = 'kneejoy_device_ip';
 
@@ -101,6 +105,20 @@ export class DeviceController {
   async tare(baseUrl?: string): Promise<void> {
     const url = resolveDeviceBaseUrl(baseUrl);
     await postTare(url);
+    this.lastStatus = await getDeviceStatus(url);
+  }
+
+  /** 推杆手动缩回（持续运动，需 stopMotorRetract 停止） */
+  async retractMotor(side: MotorSide, baseUrl?: string): Promise<void> {
+    const url = resolveDeviceBaseUrl(baseUrl);
+    await postMotor(url, side, 'retract');
+    this.lastStatus = await getDeviceStatus(url);
+  }
+
+  /** 停止推杆缩回 */
+  async stopMotorRetract(side: MotorSide = 'all', baseUrl?: string): Promise<void> {
+    const url = resolveDeviceBaseUrl(baseUrl);
+    await postMotor(url, side, 'stop');
     this.lastStatus = await getDeviceStatus(url);
   }
 

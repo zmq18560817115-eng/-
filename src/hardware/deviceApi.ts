@@ -58,6 +58,9 @@ export interface TherapyParams {
   vib: 0 | 1 | 2;
 }
 
+export type MotorSide = 'left' | 'right' | 'all';
+export type MotorAction = 'retract' | 'stop';
+
 const FAULT_LABELS: Record<number, string> = {
   0: '无',
   1: '堵转 / nFault',
@@ -133,8 +136,8 @@ export async function postHeat(baseUrl: string, temp: number): Promise<ApiResult
 
 export async function postMotor(
   baseUrl: string,
-  side: 'left' | 'right' | 'all',
-  action: 'retract' | 'stop'
+  side: MotorSide,
+  action: MotorAction
 ): Promise<ApiResult> {
   const q = new URLSearchParams({ side, action });
   return deviceFetch<ApiResult>(baseUrl, `/api/motor?${q}`, { method: 'POST' });

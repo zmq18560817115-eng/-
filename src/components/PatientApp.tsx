@@ -34,6 +34,7 @@ import PatientMessageCenter from './PatientMessageCenter';
 import AppNavBar, { AppNavStatusBadge } from './AppNavBar';
 import KneeJoyBrandIcon from './KneeJoyBrandIcon';
 import type { ConnectionPhase, ConnectionProgress, HardwareTransport } from '../hardware/types';
+import MotorRetractPanel from './MotorRetractPanel';
 
 type SymptomFormState = {
   age: number | '';
@@ -2033,6 +2034,12 @@ export default function PatientApp({
                     </div>
                   </div>
                 </div>
+
+                <MotorRetractPanel
+                  hardwareState={hardwareState}
+                  onUpdateHardware={onUpdateHardware}
+                  onLog={onSendHardwareAction}
+                />
 
                 {/* CORE LAUNCH SWITCHES BUTTONS */}
                 <button

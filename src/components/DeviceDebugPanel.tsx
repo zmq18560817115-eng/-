@@ -17,6 +17,7 @@ import {
 } from '../hardware/deviceController';
 import { faultLabel, type DeviceStatus } from '../hardware/deviceApi';
 import type { HardwareState } from '../types';
+import MotorRetractPanel from './MotorRetractPanel';
 
 interface DeviceDebugPanelProps {
   hardwareState: HardwareState;
@@ -214,7 +215,14 @@ export default function DeviceDebugPanel({
             </button>
           </div>
 
-          <label className="mb-3 flex items-center gap-2 text-[11px] font-bold text-slate-600">
+          <MotorRetractPanel
+            hardwareState={hardwareState}
+            onUpdateHardware={onUpdateHardware}
+            onLog={onLog}
+            compact
+          />
+
+          <label className="mb-3 mt-3 flex items-center gap-2 text-[11px] font-bold text-slate-600">
             <input
               type="checkbox"
               checked={polling}
