@@ -1,0 +1,12 @@
+# Render 一键部署：https://dashboard.render.com → New → Blueprint
+services:
+  - type: web
+    name: kneejoy
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PORT
+        value: "8080"
